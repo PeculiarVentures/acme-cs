@@ -12,6 +12,7 @@
     <PackageReference Include="xunit" Version="2.4.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
     <PackageReference Include="coverlet.collector" Version="1.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,5 +24,6 @@
   <ItemGroup>
     <Folder Include="Web\" />
     <Folder Include="Web\Http\" />
+    <Folder Include="Helpers\" />
   </ItemGroup>
 </Project>
