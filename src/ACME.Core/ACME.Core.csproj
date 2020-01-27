@@ -11,5 +11,6 @@
     <Folder Include="Json\" />
     <Folder Include="Protocol\" />
     <Folder Include="Web\Http\" />
+    <Folder Include="Web\Helpers\" />
   </ItemGroup>
 </Project>
