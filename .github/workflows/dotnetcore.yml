@@ -12,7 +12,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.101
-    - name: Test with dotnet
-      run: dotnet test --configuration Release
+    - name: Generate coverage report
+      run: dotnet test /p:CollectCoverage=true /p:CoverletOutput=TestResults/ /p:CoverletOutputFormat=lcov
     - name: Build with dotnet
       run: dotnet build --configuration Release
