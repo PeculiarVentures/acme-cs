@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Xunit;
 
-namespace PeculiarVentures.ACME.Web.Helpers
+namespace PeculiarVentures.ACME.Helpers
 {
     public class Base64UrlTests
     {

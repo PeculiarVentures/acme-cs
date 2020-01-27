@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace PeculiarVentures.ACME.Web.Helpers
+namespace PeculiarVentures.ACME.Helpers
 {
     public static class Base64Url
     {

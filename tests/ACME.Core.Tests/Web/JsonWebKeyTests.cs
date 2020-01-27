@@ -1,8 +1,7 @@
 ﻿using System.Security.Cryptography;
-using PeculiarVentures.ACME.Web;
 using Xunit;
 
-namespace CoreTests
+namespace PeculiarVentures.ACME.Web
 {
     public class JsonWebKeyTests
     {

@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
-using PeculiarVentures.ACME.Web.Helpers;
+using PeculiarVentures.ACME.Helpers;
 
 namespace PeculiarVentures.ACME.Web
 {

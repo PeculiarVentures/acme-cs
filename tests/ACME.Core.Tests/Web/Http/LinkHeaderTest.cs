@@ -1,5 +1,4 @@
-﻿using System;
-using Xunit;
+﻿using Xunit;
 
 namespace PeculiarVentures.ACME.Web.Http
 {

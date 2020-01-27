@@ -24,6 +24,6 @@
   <ItemGroup>
     <Folder Include="Web\" />
     <Folder Include="Web\Http\" />
-    <Folder Include="Web\Helpers\" />
+    <Folder Include="Helpers\" />
   </ItemGroup>
 </Project>
