@@ -13,4 +13,7 @@
     <Folder Include="Web\Http\" />
     <Folder Include="Web\Helpers\" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
 </Project>

@@ -13,6 +13,8 @@ namespace PeculiarVentures.ACME.Web.Helpers
             return Encode(bytesToEncode);
         }
 
+
+
         public static string Encode(byte[] input)
         {
             if (input is null)
@@ -28,6 +30,8 @@ namespace PeculiarVentures.ACME.Web.Helpers
 
             return output;
         }
+
+
 
         public static byte[] Decode(string input)
         {
