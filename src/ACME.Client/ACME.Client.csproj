@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>PeculiarVentures.ACME.Client</RootNamespace>
+    <AssemblyName>PeculiarVentures.ACME.Client</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ACME.Core\ACME.Core.csproj" />
+  </ItemGroup>
+</Project>
