@@ -1,9 +1,9 @@
-name: .NET Core
+name: ACME .NET
 
 on: [push]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,3 +14,5 @@ jobs:
         dotnet-version: 3.1.101
     - name: Test with dotnet
       run: dotnet test --configuration Release
+    - name: Build with dotnet
+      run: dotnet build --configuration Release
