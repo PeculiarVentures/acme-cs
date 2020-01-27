@@ -11,5 +11,9 @@
     <Folder Include="Json\" />
     <Folder Include="Protocol\" />
     <Folder Include="Web\Http\" />
+    <Folder Include="Json\Converters\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 </Project>
