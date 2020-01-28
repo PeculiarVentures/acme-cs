@@ -8,17 +8,19 @@ using PeculiarVentures.ACME.Web.Http;
 namespace PeculiarVentures.ACME.Server.AspNetCore
 {
     [Route("")]
+    [ApiController]
     public class AcmeController : Controller
     {
-        public AcmeController(IDirectoryService directoryService)
+        public AcmeController(IDirectoryService directoryService, INonceService nonceService)
         {
             DirectoryService = directoryService ?? throw new ArgumentNullException(nameof(directoryService));
+            NonceService = nonceService ?? throw new ArgumentNullException(nameof(nonceService));
         }
 
         public IDirectoryService DirectoryService { get; }
         public INonceService NonceService { get; }
 
-        public ActionResult CreateActionResult(AcmeResponse response)
+        protected ActionResult CreateActionResult(AcmeResponse response)
         {
             ActionResult result = response.Content == null
                 ? new NoContentResult()
