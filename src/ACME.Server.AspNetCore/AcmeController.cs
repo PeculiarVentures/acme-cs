@@ -11,7 +11,7 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
     [ApiController]
     public class AcmeController : Controller
     {
-        public Uri BaseUri => new Uri(Url.ActionLink());
+        public Uri BaseUri => new Uri($"{Request.Scheme}://{Request.Host.Value}{Request.Path.Value}");
 
         public AcmeController(
             IDirectoryService directoryService,
