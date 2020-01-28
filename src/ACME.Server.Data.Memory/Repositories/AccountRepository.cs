@@ -6,7 +6,7 @@ using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 using PeculiarVentures.ACME.Web;
 
-namespace PeculiarVenturs.ACME.Server.Data.Memory.Repositories
+namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 {
     public class AccountRepository : BaseRepository<IAccount>, IAccountRepository
     {

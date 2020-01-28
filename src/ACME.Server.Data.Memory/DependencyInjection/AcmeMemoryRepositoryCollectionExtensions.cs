@@ -1,6 +1,6 @@
 ﻿using System;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
-using PeculiarVenturs.ACME.Server.Data.Memory.Repositories;
+using PeculiarVentures.ACME.Server.Data.Memory.Repositories;
 
 namespace Microsoft.Extensions.DependencyInjection
 {

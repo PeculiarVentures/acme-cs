@@ -4,7 +4,7 @@ using System.Linq;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 
-namespace PeculiarVenturs.ACME.Server.Data.Memory.Repositories
+namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 {
     public class BaseRepository<T> : IBaseRepository<T>
         where T : IBaseObject

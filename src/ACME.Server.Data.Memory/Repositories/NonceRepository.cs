@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using PeculiarVentures.ACME.Helpers;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 
-namespace PeculiarVenturs.ACME.Server.Data.Memory.Repositories
+namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 {
     public class NonceRepository : INonceRepository
     {
