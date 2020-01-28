@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>PeculiarVentures.ACME.Server.Data.Abstractions</RootNamespace>
+    <AssemblyName>PeculiarVentures.ACME.Server.Data.Abstractions</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Repositories\" />
+    <Folder Include="Models\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ACME.Core\ACME.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="ACME.Server.Data.Memory\Repositories\NonceRepository.cs" />
+    <Compile Remove="ACME.Server.Data.Memory\Repositories\BaseRepository.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="ACME.Server.Data.Memory\obj\Debug\netstandard2.1\ACME.Server.Data.Memory.assets.cache" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>PeculiarVenturs.ACME.Server.Data.Memory</RootNamespace>
+    <AssemblyName>PeculiarVenturs.ACME.Server.Data.Memory</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Repositories\" />
+    <Folder Include="Models\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ACME.Core\ACME.Core.csproj" />
+    <ProjectReference Include="..\ACME.Server.Data.Abstractions\ACME.Server.Data.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

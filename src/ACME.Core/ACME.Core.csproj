@@ -13,6 +13,8 @@
     <Folder Include="Web\Http\" />
     <Folder Include="Json\Converters\" />
     <Folder Include="Helpers\" />
+    <Folder Include="Exceptions\" />
+    <Folder Include="Protocol\Messages\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />

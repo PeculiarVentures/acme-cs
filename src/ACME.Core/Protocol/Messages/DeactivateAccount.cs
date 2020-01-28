@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace PeculiarVentures.ACME.Protocol
+namespace PeculiarVentures.ACME.Protocol.Messages
 {
     public class DeactivateAccount : BaseObject
     {

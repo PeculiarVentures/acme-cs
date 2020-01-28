@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace PeculiarVentures.ACME.Protocol
+namespace PeculiarVentures.ACME.Protocol.Messages
 {
     public class NewAccount : BaseObject
     {

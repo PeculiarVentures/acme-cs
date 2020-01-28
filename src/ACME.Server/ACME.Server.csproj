@@ -10,5 +10,9 @@
     <ProjectReference Include="..\ACME.Core\ACME.Core.csproj">
       <ReferenceSourceTarget>ProjectReference</ReferenceSourceTarget>
     </ProjectReference>
+    <ProjectReference Include="..\ACME.Server.Data.Abstractions\ACME.Server.Data.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Services\" />
   </ItemGroup>
 </Project>
