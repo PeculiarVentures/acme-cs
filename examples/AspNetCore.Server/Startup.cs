@@ -15,60 +15,6 @@ using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 using PeculiarVentures.ACME.Server.Services;
 using PeculiarVenturs.ACME.Server.Data.Memory.Repositories;
 
-namespace Microsoft.Extensions.DependencyInjection
-{
-    public static class NewtonsoftJsonMvcCoreBuilderExtensions
-    {
-        /// <summary>
-        /// Configures Newtonsoft.Json specific features such as input and output formatters.
-        /// </summary>
-        /// <param name="builder">The <see cref="IMvcCoreBuilder"/>.</param>
-        /// <returns>The <see cref="IMvcCoreBuilder"/>.</returns>
-        public static IMvcCoreBuilder AddMyJson(this IMvcCoreBuilder builder)
-        {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
-
-            AddServicesCore(builder.Services);
-            return builder;
-        }
-
-        /// <summary>
-        /// Configures Newtonsoft.Json specific features such as input and output formatters.
-        /// </summary>
-        /// <param name="builder">The <see cref="IMvcCoreBuilder"/>.</param>
-        /// <param name="setupAction">Callback to configure <see cref="MvcNewtonsoftJsonOptions"/>.</param>
-        /// <returns>The <see cref="IMvcCoreBuilder"/>.</returns>
-        public static IMvcCoreBuilder AddMyJson(
-            this IMvcCoreBuilder builder,
-            Action<MvcNewtonsoftJsonOptions> setupAction)
-        {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
-
-            if (setupAction == null)
-            {
-                throw new ArgumentNullException(nameof(setupAction));
-            }
-
-            AddServicesCore(builder.Services);
-
-            builder.Services.Configure(setupAction);
-
-            return builder;
-        }
-
-        // Internal for testing.
-        internal static void AddServicesCore(IServiceCollection services)
-        {
-        }
-    }
-}
-
 namespace AspNetCore.Server
 {
     public class Startup
