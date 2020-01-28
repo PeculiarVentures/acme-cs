@@ -29,9 +29,6 @@ namespace PeculiarVentures.ACME.Web
             jws.Sign(key);
 
             Assert.True(jws.Verify(key));
-
-            Console.WriteLine("JWS with RSA");
-            Console.WriteLine(jws.ToString());
         }
 
         [Fact]
@@ -56,9 +53,6 @@ namespace PeculiarVentures.ACME.Web
             jws.Sign(key);
 
             Assert.True(jws.Verify(key));
-
-            Console.WriteLine("JWS with ECDsa");
-            Console.WriteLine(jws.ToString());
         }
 
         [Fact]
@@ -129,13 +123,13 @@ namespace PeculiarVentures.ACME.Web
 
             var @protected = jws.GetProtected();
 
-            Assert.Equal(@protected.Algorithm, AlgorithmsEnum.RS256);
-            Assert.Equal(@protected.Nonce, "dGVzdCBtZXNzYWdl");
-            Assert.Equal(@protected.Url, "https://acme.test.com/path");
-            Assert.Equal(@protected.Key.Algorithm, AlgorithmsEnum.RS256);
-            Assert.Equal(@protected.Key.KeyType, KeyTypesEnum.RSA);
-            Assert.Equal(@protected.Key.Exponent, "AQAB");
-            Assert.Equal(@protected.Key.Modulus, "sqUBnlog3WE1hyEG9BSRf8j4BzN67ProzJDQJRSsFUbfT8bClzzLmNZ5U1UiSwlD1QHaVizUlxIvyN_PxvALvszp09X_nthutTB62ytmASu6v7HoyDeZmDJyGZO27lchirOCXMTR3gAr0iXLHpi7_Asxa6nZSlfXjWbH-cowozr2W_SJIq18cMR-2BRzEn1C3T98gAMKqbwXBgc8GXX57VLq3oB9BRHUMBJtAetWQQmZLOjvI9Es_AU_XESiCIhRVahyJNQFYkKmM2J0pxNe9tY6LDWK_mumu_xUqlFq8iMMkDRoc1wjuS-x1IXj9rjSXeDEtscCdcU2xs6Rn-TeYw");
+            Assert.Equal(AlgorithmsEnum.RS256, @protected.Algorithm);
+            Assert.Equal("dGVzdCBtZXNzYWdl", @protected.Nonce);
+            Assert.Equal("https://acme.test.com/path", @protected.Url);
+            Assert.Equal(AlgorithmsEnum.RS256, @protected.Key.Algorithm);
+            Assert.Equal(KeyTypesEnum.RSA, @protected.Key.KeyType);
+            Assert.Equal("AQAB", @protected.Key.Exponent);
+            Assert.Equal("sqUBnlog3WE1hyEG9BSRf8j4BzN67ProzJDQJRSsFUbfT8bClzzLmNZ5U1UiSwlD1QHaVizUlxIvyN_PxvALvszp09X_nthutTB62ytmASu6v7HoyDeZmDJyGZO27lchirOCXMTR3gAr0iXLHpi7_Asxa6nZSlfXjWbH-cowozr2W_SJIq18cMR-2BRzEn1C3T98gAMKqbwXBgc8GXX57VLq3oB9BRHUMBJtAetWQQmZLOjvI9Es_AU_XESiCIhRVahyJNQFYkKmM2J0pxNe9tY6LDWK_mumu_xUqlFq8iMMkDRoc1wjuS-x1IXj9rjSXeDEtscCdcU2xs6Rn-TeYw", @protected.Key.Modulus);
         }
 
         [Fact]
@@ -149,13 +143,13 @@ namespace PeculiarVentures.ACME.Web
             };
             var @protected = jws.GetProtected();
 
-            Assert.Equal(@protected.Algorithm, AlgorithmsEnum.ES256);
-            Assert.Equal(@protected.Nonce, "dGVzdCBtZXNzYWdl");
-            Assert.Equal(@protected.Url, "https://acme.test.com/path");
-            Assert.Equal(@protected.Key.KeyType, KeyTypesEnum.EC);
-            Assert.Equal(@protected.Key.EllipticCurve, EllipticCurvesEnum.P256);
-            Assert.Equal(@protected.Key.X, "mwauoXmb0rYAO0JY2q6X1WHbU-gVnZcjcpNh-TMUz-0");
-            Assert.Equal(@protected.Key.Y, "yVXrJ6YywtiKdUSOohUT52THlbt8AYtWiKWX-6WXb50");
+            Assert.Equal(AlgorithmsEnum.ES256, @protected.Algorithm);
+            Assert.Equal("dGVzdCBtZXNzYWdl", @protected.Nonce);
+            Assert.Equal("https://acme.test.com/path", @protected.Url);
+            Assert.Equal(KeyTypesEnum.EC, @protected.Key.KeyType);
+            Assert.Equal(EllipticCurvesEnum.P256, @protected.Key.EllipticCurve);
+            Assert.Equal("mwauoXmb0rYAO0JY2q6X1WHbU-gVnZcjcpNh-TMUz-0", @protected.Key.X);
+            Assert.Equal("yVXrJ6YywtiKdUSOohUT52THlbt8AYtWiKWX-6WXb50", @protected.Key.Y);
         }
     }
 }
