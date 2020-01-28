@@ -9,11 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
-using PeculiarVentures.ACME.Server.Services;
-using PeculiarVenturs.ACME.Server.Data.Memory.Repositories;
 
 namespace AspNetCore.Server
 {
@@ -36,13 +32,8 @@ namespace AspNetCore.Server
                     o.SerializerSettings.Formatting = Formatting.Indented;
                 });
 
-            services
-                .AddSingleton<INonceRepository, NonceRepository>()
-                .AddSingleton<IAccountRepository, AccountRepository>()
-                .AddScoped<INonceService, NonceService>()
-                .AddScoped<IDirectoryService, DirectoryService>()
-                .AddScoped<IAccountService, AccountService>()
-                ;
+            services.AddAcmeMemoryRepositories();
+            services.AddAcmeServerServices();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
