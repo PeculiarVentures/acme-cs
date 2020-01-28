@@ -11,14 +11,22 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
     [ApiController]
     public class AcmeController : Controller
     {
-        public AcmeController(IDirectoryService directoryService, INonceService nonceService)
+        public Uri BaseUri => new Uri(Url.ActionLink());
+
+        public AcmeController(
+            IDirectoryService directoryService,
+            INonceService nonceService,
+            IAccountService accountService
+            )
         {
             DirectoryService = directoryService ?? throw new ArgumentNullException(nameof(directoryService));
             NonceService = nonceService ?? throw new ArgumentNullException(nameof(nonceService));
+            AccountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
         }
 
         public IDirectoryService DirectoryService { get; }
         public INonceService NonceService { get; }
+        public IAccountService AccountService { get; }
 
         protected ActionResult CreateActionResult(AcmeResponse response)
         {
@@ -33,6 +41,11 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
 
             #region Add Link header
 
+            var directoryLink = new Uri(BaseUri, "directory");
+            Response.Headers.Add(
+                "Link",
+                new LinkHeader(directoryLink.ToString(), new LinkHeaderItem("rel", "index", true)).ToString());
+
             foreach (LinkHeader link in response.Links)
             {
                 Response.Headers.Add("Link", link.ToString());
@@ -42,7 +55,7 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             #region Add Loacation header
             if (response.Location != null)
             {
-                Response.Headers.Add("Location", response.Location.ToString());
+                Response.Headers.Add("Location", response.Location);
             }
             #endregion
 
@@ -61,6 +74,11 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         public ActionResult GetDirectory()
         {
             var response = DirectoryService.GetDirectory();
+            var directory = response.GetContent<Directory>();
+
+            directory.NewNonce = new Uri(BaseUri, "new-nonce").ToString();
+            directory.NewAccount = new Uri(BaseUri, "new-acct").ToString();
+
             return CreateActionResult(response);
         }
 
@@ -70,6 +88,26 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         public ActionResult NewNonce()
         {
             var response = NonceService.NewNonce();
+            return CreateActionResult(response);
+        }
+
+        [Route("new-acct")]
+        [HttpPost]
+        public ActionResult Create([FromBody]JsonWebSignature token)
+        {
+            var response = AccountService.Create(new AcmeRequest(token));
+            if (response.Location != null)
+            {
+                response.Location = new Uri(BaseUri, response.Location).ToString();
+            }
+            return CreateActionResult(response);
+        }
+
+        [Route("acct/{id:int}")]
+        [HttpPost]
+        public ActionResult Update([FromBody]JsonWebSignature token)
+        {
+            var response = AccountService.Update(new AcmeRequest(token));
             return CreateActionResult(response);
         }
     }

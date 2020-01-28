@@ -11,7 +11,7 @@ namespace PeculiarVentures.ACME.Web
 
         public int StatusCode { get; set; }
         public string ReplayNonce { get; set; }
-        public Uri Location { get; set; }
+        public string Location { get; set; }
         public LinkHeaderCollection Links { get; set; } = new LinkHeaderCollection();
         public object Content { get; set; }
 

@@ -10,6 +10,20 @@ namespace PeculiarVenturs.ACME.Server.Data.Memory.Repositories
 {
     public class AccountRepository : BaseRepository<IAccount>, IAccountRepository
     {
+        public Account Convert(IAccount account)
+        {
+            if (account is Models.Account item)
+            {
+                return new Account
+                {
+                    Contacts = item.Contacts.ToArray(),
+                    Status = item.Status,
+                    TermsOfServiceAgreed = item.TermsOfServiceAgreed,
+                };
+            }
+            throw new InvalidCastException("Incomming parameter doesn't belong to current repository");
+        }
+
         public IAccount Create(JsonWebKey key, NewAccount @params)
         {
             Models.Account account = @params;

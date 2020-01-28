@@ -45,7 +45,7 @@ namespace PeculiarVentures.ACME.Server.Services
 
         private void AssertSignatureAlgorithm(AcmeRequest request)
         {
-            var header = request.GetProtected();
+            var header = request.Token.GetProtected();
             switch (header.Algorithm)
             {
                 case AlgorithmsEnum.RS1:
@@ -67,7 +67,7 @@ namespace PeculiarVentures.ACME.Server.Services
 
         private void AssertProtectedRequiredFields(AcmeRequest request)
         {
-            var header = request.GetProtected();
+            var header = request.Token.GetProtected();
             if (header.Algorithm == AlgorithmsEnum.None)
             {
                 throw new MalformedException($"Cannot get required field 'alg'");
@@ -84,7 +84,7 @@ namespace PeculiarVentures.ACME.Server.Services
 
         private void AssertSignature(AcmeRequest request)
         {
-            var header = request.GetProtected();
+            var header = request.Token.GetProtected();
             JsonWebKey key = null;
             if (header.Key != null)
             {
@@ -96,7 +96,7 @@ namespace PeculiarVentures.ACME.Server.Services
                 key = account.PublicKey;
             }
 
-            if (request.Verify(key.GetPublicKey()))
+            if (request.Token.Verify(key.GetPublicKey()))
             {
                 throw new AcmeException(ErrorType.BadPublicKey);
             }
@@ -120,12 +120,23 @@ namespace PeculiarVentures.ACME.Server.Services
                 throw new MalformedException($"Cannot get Key Id from link {kid}");
             }
 
-            var account = AccountRepository.GetById(int.Parse(match.Groups[0].Value));
+            var account = AccountRepository.GetById(int.Parse(match.Groups[1].Value));
             if (account == null)
             {
                 throw new AccountDoesNotExistException();
             }
             return account;
+        }
+
+        public void AssertAccountStatus(IAccount account)
+        {
+            // If a server receives a POST or POST-as-GET from a
+            // deactivated account, it MUST return an error response with status
+            // code 401(Unauthorized) and type "urn:ietf:params:acme:error:unauthorized"
+            if (account.Status == AccountStatus.Deactivated)
+            {
+                throw new UnauthorizedException("Account deactivated");
+            }
         }
 
         public AcmeResponse CreateResponse()
