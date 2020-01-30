@@ -26,7 +26,9 @@ namespace PeculiarVentures.ACME.Web
         public bool IsPayloadEmpty => string.IsNullOrEmpty(Payload);
 
         [JsonIgnore]
-        public bool IsPayloadEmptyObject => throw new NotImplementedException();
+        public bool IsPayloadEmptyObject =>
+            !string.IsNullOrEmpty(Payload)
+            && Encoding.UTF8.GetString(Base64Url.Decode(Payload)) == "{}";
 
 
 

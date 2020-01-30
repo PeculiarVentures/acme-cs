@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using PeculiarVentures.ACME.Json.Converters;
 
-namespace PeculiarVentures.ACME.Protocol
+namespace PeculiarVentures.ACME.Protocol.Messages
 {
     public class NewOrder : BaseObject
     {

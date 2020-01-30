@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>PeculiarVentures..ACME.Server.Data.Memory</RootNamespace>
+    <AssemblyName>PeculiarVentures.ACME.Server.Data.Memory</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Repositories\" />
+    <Folder Include="Models\" />
+    <Folder Include="DependencyInjection\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ACME.Core\ACME.Core.csproj" />
+    <ProjectReference Include="..\ACME.Server.Data.Abstractions\ACME.Server.Data.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.1" />
+  </ItemGroup>
+</Project>

@@ -9,7 +9,7 @@ namespace PeculiarVentures.ACME.Web
     public enum AlgorithmsEnum
     {
         [EnumMember(Value = null)]
-        NONE,
+        None,
 
         [EnumMember(Value = "HS256")]
         HS256,
@@ -38,6 +38,9 @@ namespace PeculiarVentures.ACME.Web
         [EnumMember(Value = "ES512")]
         ES512,
 
+        [EnumMember(Value = "PS1")]
+        PS1,
+
         [EnumMember(Value = "PS256")]
         PS256,
 
@@ -46,9 +49,6 @@ namespace PeculiarVentures.ACME.Web
 
         [EnumMember(Value = "PS512")]
         PS512,
-
-        [EnumMember(Value = "none")]
-        None,
 
         [EnumMember(Value = "RSA1_5")]
         RSA1_5,

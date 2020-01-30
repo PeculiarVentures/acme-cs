@@ -56,5 +56,8 @@ namespace PeculiarVentures.ACME.Protocol
         [JsonProperty("orders")]
         [JsonRequired()]
         public string Orders { get; set; }
+
+        [JsonIgnore]
+        public int Id { get; set; }
     }
 }

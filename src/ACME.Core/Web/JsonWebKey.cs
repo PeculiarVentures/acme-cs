@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using PeculiarVentures.ACME.Helpers;
+using PeculiarVentures.ACME.Protocol;
 
 namespace PeculiarVentures.ACME.Web
 {
@@ -129,7 +130,18 @@ namespace PeculiarVentures.ACME.Web
             return ECDsa.Create(@params);
         }
 
-
+        public AsymmetricAlgorithm GetPublicKey()
+        {
+            if (KeyType == KeyTypesEnum.EC)
+            {
+                return GetEcdsaKey();
+            }
+            else if (KeyType == KeyTypesEnum.RSA)
+            {
+                return GetRsaKey();
+            }
+            throw new AcmeException(ErrorType.BadPublicKey);
+        }
 
         public void SetEcdsaKey(ECDsa key)
         {
