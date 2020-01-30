@@ -16,6 +16,7 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
             {
                 return new Account
                 {
+                    Id = item.Id,
                     Contacts = item.Contacts.ToArray(),
                     Status = item.Status,
                     TermsOfServiceAgreed = item.TermsOfServiceAgreed,

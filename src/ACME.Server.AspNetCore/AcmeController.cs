@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.AspNetCore.Mvc;
 using PeculiarVentures.ACME.Protocol;
-using PeculiarVentures.ACME.Server.Services;
+using PeculiarVentures.ACME.Server.Controllers;
 using PeculiarVentures.ACME.Web;
 using PeculiarVentures.ACME.Web.Http;
 
@@ -11,36 +11,42 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
     [ApiController]
     public class AcmeController : Controller
     {
-        public Uri BaseUri => new Uri($"{Request.Scheme}://{Request.Host.Value}{Request.Path.Value}");
-
-        public AcmeController(
-            IDirectoryService directoryService,
-            INonceService nonceService,
-            IAccountService accountService
-            )
+        public AcmeController(IAcmeController controller)
         {
-            DirectoryService = directoryService ?? throw new ArgumentNullException(nameof(directoryService));
-            NonceService = nonceService ?? throw new ArgumentNullException(nameof(nonceService));
-            AccountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
+            Controller = controller ?? throw new ArgumentNullException(nameof(controller));
         }
 
-        public IDirectoryService DirectoryService { get; }
-        public INonceService NonceService { get; }
-        public IAccountService AccountService { get; }
+        public Uri BaseUri => new Uri($"{Request.Scheme}://{Request.Host.Value}{Request.Path.Value}");
+
+        public IAcmeController Controller { get; }
+
+        private AcmeRequest GetAcmeRequest(JsonWebSignature token)
+        {
+            return new AcmeRequest(token)
+            {
+                Method = Request.Method,
+            };
+        }
+
+        private AcmeRequest GetAcmeRequest()
+        {
+            return new AcmeRequest()
+            {
+                Method = Request.Method,
+            };
+        }
 
         protected ActionResult CreateActionResult(AcmeResponse response)
         {
+            // TODO NewNoce must return 200 status for HEAD request
             ActionResult result = response.Content == null
                 ? new NoContentResult()
-                : (ActionResult)new OkObjectResult(response.Content);
-
-
-            #region Set status code
-            Response.StatusCode = response.StatusCode;
-            #endregion
-
+                : (ActionResult)new OkObjectResult(response.Content)
+                    {
+                        StatusCode = response.StatusCode,
+                    };
+            
             #region Add Link header
-
             var directoryLink = new Uri(BaseUri, "directory");
             Response.Headers.Add(
                 "Link",
@@ -73,11 +79,12 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         [HttpGet]
         public ActionResult GetDirectory()
         {
-            var response = DirectoryService.GetDirectory();
+            var response = Controller.GetDirectory();
             var directory = response.GetContent<Directory>();
 
-            directory.NewNonce = new Uri(BaseUri, "new-nonce").ToString();
-            directory.NewAccount = new Uri(BaseUri, "new-acct").ToString();
+            directory.NewNonce ??= new Uri(BaseUri, "new-nonce").ToString();
+            directory.NewAccount ??= new Uri(BaseUri, "new-acct").ToString();
+            directory.NewAccount ??= new Uri(BaseUri, "new-order").ToString();
 
             return CreateActionResult(response);
         }
@@ -87,19 +94,22 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         [HttpHead]
         public ActionResult NewNonce()
         {
-            var response = NonceService.NewNonce();
+            var response = Controller.GetNonce(GetAcmeRequest());
             return CreateActionResult(response);
         }
 
         [Route("new-acct")]
         [HttpPost]
-        public ActionResult Create([FromBody]JsonWebSignature token)
+        public ActionResult CreateAccount([FromBody]JsonWebSignature token)
         {
-            var response = AccountService.Create(new AcmeRequest(token));
+            var response = Controller.CreateAccount(GetAcmeRequest(token));
+
             if (response.Location != null)
             {
+                // Compleate Location
                 response.Location = new Uri(BaseUri, response.Location).ToString();
             }
+
             return CreateActionResult(response);
         }
 
@@ -107,7 +117,7 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         [HttpPost]
         public ActionResult Update([FromBody]JsonWebSignature token)
         {
-            var response = AccountService.Update(new AcmeRequest(token));
+            var response = Controller.PostAccount(GetAcmeRequest(token));
             return CreateActionResult(response);
         }
     }

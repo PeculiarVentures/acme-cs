@@ -14,5 +14,6 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Repositories
         T Add(T item);
         T Update(T item);
         void Remove(T item);
+        T Create();
     }
 }

@@ -1,86 +1,113 @@
 ﻿using System;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Protocol.Messages;
-using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
-    public class AccountService : AcmeService, IAccountService
+    public class AccountService : IAccountService
     {
-        public AccountService(
-            INonceRepository nonceRepository,
-            IAccountRepository accountRepository) : base(nonceRepository, accountRepository)
+        public AccountService(IAccountRepository accountRepository)
         {
+            AccountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
         }
 
-        public AcmeResponse Create(AcmeRequest request)
+        public IAccountRepository AccountRepository { get; }
+
+        public Account GetById(int id)
         {
-            return WrapAction(response =>
+            var account = AccountRepository.GetById(id);
+            if (account == null)
             {
-                var @params = request.GetContent<NewAccount>();
-                IAccount account;
 
-                if (@params.OnlyReturnExisting == true)
-                {
-                    account = AccountRepository.GetByPublicKey(request.PublicKey)
-                        ?? throw new AccountDoesNotExistException();
-                    response.Content = AccountRepository.Convert(account);
-                    response.StatusCode = 200; // Ok
-                }
-                else
-                {
-                    // Create new account
-                    var header = request.Token.GetProtected();
-                    account = AccountRepository.Create(header.Key, @params);
-                    AccountRepository.Add(account);
+                throw new AccountDoesNotExistException();
+            }
 
-                    response.Content = AccountRepository.Convert(account);
-                    response.StatusCode = 201; // Created
-                }
-
-                response.Location = $"acct/{account.Id}";
-            });
+            return account == null
+                ? null
+                : AccountRepository.Convert(account);
         }
 
-        public AcmeResponse Update(AcmeRequest request)
+        public Account GetByPublicKey(JsonWebKey key)
         {
-            return WrapAction(response =>
+            #region Check arguments
+            if (key is null)
             {
-                var @params = request.GetContent<UpdateAccount>();
+                throw new ArgumentNullException(nameof(key));
+            }
+            #endregion
 
-                var account = GetAccount(request.KeyId);
-                AssertAccountStatus(account);
+            var account = AccountRepository.GetByPublicKey(key);
 
-                if (@params.Status != null)
-                {
-                    // Deactivate
-                    if (@params.Status != AccountStatus.Deactivated)
-                    {
-                        throw new MalformedException("Request paramter status must be 'deactivated'");
-                    }
-
-                    account.Status = AccountStatus.Deactivated;
-                }
-                else
-                {
-                    // Update
-                    account.Contacts = @params.Contacts;
-                }
-                AccountRepository.Update(account);
-
-                response.Content = AccountRepository.Convert(account);
-            });
+            return account == null
+                ? null
+                : AccountRepository.Convert(account);
         }
 
-
-        public AcmeResponse ChangeKey(AcmeRequest request)
+        public Account Create(JsonWebKey key, NewAccount @params)
         {
-            return WrapAction(response =>
-            {
-                throw new NotImplementedException();
-            });
+            var account = AccountRepository.Create(key, @params);
+            account = AccountRepository.Add(account);
+            return AccountRepository.Convert(account);
         }
+
+        public Account Update(int accountId, string[] contacts)
+        {
+            // Get account
+            var account = AccountRepository.GetById(accountId);
+            if (account == null)
+            {
+                throw new AccountDoesNotExistException();
+            }
+
+            // Assign values
+            account.Contacts = contacts;
+
+            // Save changes
+            account = AccountRepository.Update(account);
+
+            // Return JSON
+            return AccountRepository.Convert(account);
+        }
+
+        public Account Deactivate(int accountId)
+        {
+            // Get account
+            var account = AccountRepository.GetById(accountId);
+            if (account == null)
+            {
+                throw new AccountDoesNotExistException();
+            }
+
+            // Assign values
+            account.Status = AccountStatus.Deactivated;
+
+            // Save changes
+            account = AccountRepository.Update(account);
+
+            // Return JSON
+            return AccountRepository.Convert(account);
+        }
+
+        public Account Revoke(int accountId)
+        {
+            // Get account
+            var account = AccountRepository.GetById(accountId);
+            if (account == null)
+            {
+                throw new AccountDoesNotExistException();
+            }
+
+            // Assign values
+            account.Status = AccountStatus.Revoked;
+
+            // Save changes
+            account = AccountRepository.Update(account);
+
+            // Return JSON
+            return AccountRepository.Convert(account);
+        }
+
     }
 }

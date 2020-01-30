@@ -22,6 +22,11 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
             return item;
         }
 
+        public T Create()
+        {
+            return (T)Activator.CreateInstance(typeof(T));
+        }
+
         public T GetById(int id)
         {
             return Items.FirstOrDefault(o => o.Id == id);

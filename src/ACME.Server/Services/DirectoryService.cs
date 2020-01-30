@@ -6,13 +6,9 @@ namespace PeculiarVentures.ACME.Server.Services
 {
     public class DirectoryService : IDirectoryService
     {
-        public AcmeResponse GetDirectory()
+        public Directory GetDirectory()
         {
-            return new AcmeResponse
-            {
-                StatusCode = 200,
-                Content = new Directory(),
-            };
+            return new Directory();
         }
     }
 }

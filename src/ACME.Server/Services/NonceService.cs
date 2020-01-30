@@ -4,21 +4,27 @@ using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
-    public class NonceService : AcmeService, INonceService
+    public class NonceService : INonceService
     {
-        public NonceService(
-            INonceRepository nonceRepository,
-            IAccountRepository accountRepository)
-            : base(nonceRepository, accountRepository)
+        public INonceRepository NonceRepository { get; }
+
+        public NonceService(INonceRepository nonceRepository)
         {
+            NonceRepository = nonceRepository ?? throw new ArgumentNullException(nameof(nonceRepository));
         }
 
-        public AcmeResponse NewNonce()
+        public string Create()
         {
-            return WrapAction((response) =>
+            return NonceRepository.Create();
+        }
+
+        public void Validate(string nonce)
+        {
+            if (NonceRepository.Contains(nonce))
             {
-                response.ReplayNonce = NonceRepository.Create();
-            });
+                throw new BadNonceException();
+            }
+            NonceRepository.Remove(nonce);
         }
     }
 }

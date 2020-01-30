@@ -21,6 +21,7 @@ namespace PeculiarVentures.ACME.Protocol
         {
             return new Exception($"ACME error '{error.Type}'.{(error.Detail != null ? " " + error.Detail : "")}");
         }
+
         public static implicit operator Error(Exception exception)
         {
             return new Error

@@ -9,7 +9,7 @@ namespace PeculiarVentures.ACME.Web
         {
         }
 
-        public int StatusCode { get; set; }
+        public int StatusCode { get; set; } = 200;
         public string ReplayNonce { get; set; }
         public string Location { get; set; }
         public LinkHeaderCollection Links { get; set; } = new LinkHeaderCollection();
