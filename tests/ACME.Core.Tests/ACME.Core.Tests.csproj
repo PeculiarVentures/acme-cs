@@ -29,5 +29,6 @@
     <Folder Include="Web\" />
     <Folder Include="Web\Http\" />
     <Folder Include="Helpers\" />
+    <Folder Include="Cryptography\" />
   </ItemGroup>
 </Project>
