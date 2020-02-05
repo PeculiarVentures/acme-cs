@@ -38,7 +38,7 @@ namespace PeculiarVentures.ACME.Server.Services
             }
             #endregion
 
-            var account = AccountRepository.GetByPublicKey(key);
+            var account = AccountRepository.FindByPublicKey(key);
 
             return account == null
                 ? null
@@ -109,5 +109,36 @@ namespace PeculiarVentures.ACME.Server.Services
             return AccountRepository.Convert(account);
         }
 
+        public Account ChangeKey(int accountId, JsonWebKey key)
+        {
+            #region Check arguments
+            if (key is null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+            #endregion
+
+            // Get account
+            var account = AccountRepository.GetById(accountId);
+            if (account is null)
+            {
+                throw new AccountDoesNotExistException();
+            }
+
+            // Check key
+            if (AccountRepository.FindByPublicKey(key) != null)
+            {
+                throw new ArgumentException(nameof(key));
+            }
+
+            // Change key
+            account.PublicKey = key;
+
+            // Save changes
+            AccountRepository.Update(account);
+
+            // Return JSON
+            return AccountRepository.Convert(account);
+        }
     }
 }

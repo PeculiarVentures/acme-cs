@@ -20,6 +20,7 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
                     Contacts = item.Contacts.ToArray(),
                     Status = item.Status,
                     TermsOfServiceAgreed = item.TermsOfServiceAgreed,
+                    Key = item.PublicKey,
                 };
             }
             throw new InvalidCastException("Incomming parameter doesn't belong to current repository");
@@ -32,7 +33,7 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
             return account;
         }
 
-        public IAccount GetByPublicKey(JsonWebKey publicKey)
+        public IAccount FindByPublicKey(JsonWebKey publicKey)
         {
             return Items.FirstOrDefault(o => o.PublicKey.Equals(publicKey));
         }

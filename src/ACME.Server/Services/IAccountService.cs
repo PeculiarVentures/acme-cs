@@ -35,5 +35,6 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <returns></returns>
         /// <exception cref="AccountDoesNotExistException"/>
         Account Update(int accountId, string[] contacts);
+        Account ChangeKey(int accountId, JsonWebKey key);
     }
 }

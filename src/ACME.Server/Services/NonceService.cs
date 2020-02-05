@@ -20,7 +20,7 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public void Validate(string nonce)
         {
-            if (NonceRepository.Contains(nonce))
+            if (!NonceRepository.Contains(nonce))
             {
                 throw new BadNonceException();
             }

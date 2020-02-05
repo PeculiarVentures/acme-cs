@@ -32,9 +32,20 @@ namespace PeculiarVentures.ACME.Server.Controllers
             };
         }
 
-        public AcmeResponse WrapAction(Action<AcmeResponse> action)
+        public AcmeResponse WrapAction(Action<AcmeResponse> action, AcmeRequest request = null)
         {
             var response = CreateResponse();
+
+            // check nonce
+            if (request != null)
+            {
+                if (request.Method == "POST")
+                {
+                    var nonce = request.Token.GetProtected().Nonce ?? throw new BadNonceException();
+                    NonceService.Validate(nonce);
+                }
+            }
+
             try
             {
                 action.Invoke(response);
@@ -102,7 +113,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
             return WrapAction(response =>
             {
                 var @params = request.GetContent<NewAccount>();
-
                 Account account = AccountService.GetByPublicKey(request.PublicKey);
 
                 if (@params.OnlyReturnExisting == true)
@@ -129,7 +139,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
                 // Set headers
                 response.Location = $"acct/{account.Id}";
-            });
+            }, request);
         }
 
         public AcmeResponse PostAccount(AcmeRequest request)
@@ -160,7 +170,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 {
                     response.Content = account;
                 }
-            });
+            }, request);
         }
 
         public void AssertAccountStatus(Account account)
@@ -174,6 +184,71 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }
         }
 
+        public AcmeResponse ChangeKey(AcmeRequest request)
+        {
+            return WrapAction((response) =>
+            {
+                var reqProtected = request.Token.GetProtected();
+
+                // TODO need check this checking
+                // Validate the POST request belongs to a currently active account, as described in Section 6.
+                var acc = GetAccount(reqProtected.KeyID);
+                var js = new JsonWebSignature();
+                if (!js.Verify(acc.Key.GetPublicKey()))
+                {
+                    throw new MalformedException();
+                }
+
+                // Check that the payload of the JWS is a well - formed JWS object(the "inner JWS").
+                var innerJWS = request.Token.GetPayload<JsonWebSignature>();
+                var innerProtected = innerJWS.GetProtected();
+
+                // Check that the JWS protected header of the inner JWS has a "jwk" field.
+                var jwk = innerProtected.Key;
+                if (jwk == null)
+                {
+                    throw new MalformedException("The inner JWS has't a 'jwk' field");
+                }
+
+                // Check that the inner JWS verifies using the key in its "jwk" field.
+                if (!js.Verify(jwk.GetPublicKey()))
+                {
+                    throw new MalformedException("The inner JWT not verified");
+                }
+
+                // Check that the payload of the inner JWS is a well-formed keyChange object (as described above).
+                KeyChange param = innerJWS.GetPayload<KeyChange>();
+
+                // Check that the "url" parameters of the inner and outer JWSs are the same.
+                if (reqProtected.Url != innerProtected.Url)
+                {
+                    throw new MalformedException("The 'url' parameters of the inner and outer JWSs are not the same");
+                }
+
+                // Check that the "account" field of the keyChange object contains the URL for the account matching the old key (i.e., the "kid" field in the outer JWS).
+                if (reqProtected.KeyID != param.Account)
+                {
+                    throw new MalformedException("The 'account' field not contains the URL for the account matching the old key");
+                }
+
+                // Check that the "oldKey" field of the keyChange object is the same as the account key for the account in question.
+                var account = AccountService.GetByPublicKey(param.Key);
+                var account2 = GetAccount(reqProtected.KeyID);
+                if (account.Id != account2.Id)
+                {
+                    throw new MalformedException("The 'oldKey' is the not same as the account key");
+                }
+
+                // Check that no account exists whose account key is the same as the key in the "jwk" header parameter of the inner JWS.
+                // in repository
+
+
+                response.Content = AccountService.ChangeKey(acc.Id, jwk);
+                response.StatusCode = 200; // Ok
+
+            }, request);
+        }
+
         #endregion
 
         #region Order management
@@ -183,7 +258,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             return WrapAction((response) =>
             {
                 throw new NotImplementedException();
-            });
+            }, request);
         }
 
         public AcmeResponse PostOrder(AcmeRequest request)
@@ -191,7 +266,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             return WrapAction((response) =>
             {
                 throw new NotImplementedException();
-            });
+            }, request);
         }
 
         #endregion
