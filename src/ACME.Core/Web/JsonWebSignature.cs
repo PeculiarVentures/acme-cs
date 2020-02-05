@@ -71,6 +71,7 @@ namespace PeculiarVentures.ACME.Web
         }
 
 
+
         public byte[] GetSignature()
         {
             return Base64Url.Decode(Signature ?? throw new ArgumentNullException(nameof(Signature)));

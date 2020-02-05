@@ -36,7 +36,6 @@ namespace PeculiarVentures.ACME.Protocol
         /// The time at which the server validated this challenge.
         /// </summary>
         /// validated (optional, string)
-        [JsonConverter(typeof(DateTimeFormatConverter))]
         [JsonProperty("validated")]
         public DateTime? Validated { get; set; }
 
@@ -46,5 +45,13 @@ namespace PeculiarVentures.ACME.Protocol
         /// error (optional, object)
         [JsonProperty("error")]
         public Error Error { get; set; }
+
+        /// <summary>
+        /// A random value that uniquely identifies the challenge.
+        /// </summary>
+        /// token (required, string)
+        [JsonProperty("token")]
+        [JsonRequired]
+        public string Token { get; set; }
     }
 }

@@ -27,7 +27,6 @@ namespace PeculiarVentures.ACME.Protocol
         /// The timestamp after which the server will consider this authorization invalid
         /// </summary>
         /// expires (optional, string)
-        [JsonConverter(typeof(DateTimeFormatConverter))]
         [JsonProperty("expires")]
         public DateTime? Expires { get; set; }
 

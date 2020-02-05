@@ -28,7 +28,6 @@ namespace PeculiarVentures.ACME.Protocol
         /// for objects with "pending" or "valid" in the status field.
         /// </summary>
         /// expires (optional, string)
-        [JsonConverter(typeof(DateTimeFormatConverter))]
         [JsonProperty("expires")]
         public DateTime? Expires { get; set; }
 
@@ -44,7 +43,6 @@ namespace PeculiarVentures.ACME.Protocol
         /// The requested value of the notBefore field in the certificate.
         /// </summary>
         /// notBefore (optional, string) in the date format defined in [RFC3339]
-        [JsonConverter(typeof(DateTimeFormatConverter))]
         [JsonProperty("notBefore")]
         public DateTime? NotBefore { get; set; }
 
@@ -52,7 +50,6 @@ namespace PeculiarVentures.ACME.Protocol
         /// The requested value of the notAfter field in the certificate.
         /// </summary>
         /// notAfter (optional, string) in the date format defined in [RFC3339]
-        [JsonConverter(typeof(DateTimeFormatConverter))]
         [JsonProperty("notAfter")]
         public DateTime? NotAfter { get; set; }
 

@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Protocol
 {
@@ -54,10 +55,35 @@ namespace PeculiarVentures.ACME.Protocol
         /// </summary>
         /// orders (required, string)
         [JsonProperty("orders")]
-        [JsonRequired()]
+        //[JsonRequired()]
         public string Orders { get; set; }
 
         [JsonIgnore]
         public int Id { get; set; }
+
+        /// <summary>
+        /// Related for LE.
+        /// </summary>
+        [JsonProperty("initialIp")]
+        public string InitialIp { get; set; }
+
+        /// <summary>
+        /// Related for LE.
+        /// </summary>
+        [JsonProperty("createdAt")]
+        public string CreatedAt { get; set; }
+
+        /// <summary>
+        /// Related for LE.
+        /// </summary>
+        [JsonProperty("agreement")]
+        public string Agreement { get; set; }
+
+
+        /// <summary>
+        /// Related for LE.
+        /// </summary>
+        [JsonProperty("key")]
+        public JsonWebKey Key { get; set; }
     }
 }
