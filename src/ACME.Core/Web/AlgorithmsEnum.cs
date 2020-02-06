@@ -8,9 +8,6 @@ namespace PeculiarVentures.ACME.Web
     /// <see cref="https://www.iana.org/assignments/jose/jose.xhtml#web-signature-encryption-algorithms"/>
     public enum AlgorithmsEnum
     {
-        [EnumMember(Value = null)]
-        None,
-
         [EnumMember(Value = "HS256")]
         HS256,
 

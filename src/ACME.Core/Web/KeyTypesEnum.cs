@@ -8,9 +8,6 @@ namespace PeculiarVentures.ACME.Web
     /// <see cref="https://www.iana.org/assignments/jose/jose.xhtml#web-key-types"/>
     public enum KeyTypesEnum
     {
-        [EnumMember(Value = null)]
-        NONE,
-
         [EnumMember(Value = "EC")]
         EC,
 

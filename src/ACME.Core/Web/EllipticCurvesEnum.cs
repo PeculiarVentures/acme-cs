@@ -8,8 +8,8 @@ namespace PeculiarVentures.ACME.Web
     /// <see cref="https://www.iana.org/assignments/jose/jose.xhtml#web-key-elliptic-curve"/>
     public enum EllipticCurvesEnum
     {
-        [EnumMember(Value = null)]
-        NONE,
+        [EnumMember]
+        Default,
 
         [EnumMember(Value = "P-256")]
         P256,

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Protocol.Messages
 {
@@ -20,6 +21,6 @@ namespace PeculiarVentures.ACME.Protocol.Messages
         /// oldKey (required, JWK)
         [JsonProperty("oldKey")]
         [JsonRequired]
-        public string OldKey { get; set; }
+        public JsonWebKey Key { get; set; }
     }
 }

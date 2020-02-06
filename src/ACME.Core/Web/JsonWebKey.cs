@@ -16,12 +16,12 @@ namespace PeculiarVentures.ACME.Web
     {
         [JsonProperty("alg")]
         [JsonConverter(typeof(StringEnumConverter))]
-        public AlgorithmsEnum Algorithm { get; set; }
+        public AlgorithmsEnum? Algorithm { get; set; }
 
         [JsonProperty("kty")]
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonRequired]
-        public KeyTypesEnum KeyType { get; set; }
+        public KeyTypesEnum? KeyType { get; set; }
 
         [JsonProperty("e")]
         public string Exponent { get; set; }
@@ -37,7 +37,7 @@ namespace PeculiarVentures.ACME.Web
 
         [JsonProperty("crv")]
         [JsonConverter(typeof(StringEnumConverter))]
-        public EllipticCurvesEnum EllipticCurve { get; set; }
+        public EllipticCurvesEnum? EllipticCurve { get; set; }
 
         [JsonProperty("k")]
         public string KeyValue { get; set; }

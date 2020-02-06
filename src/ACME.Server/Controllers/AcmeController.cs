@@ -217,7 +217,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 }
 
                 // Check that the payload of the inner JWS is a well-formed keyChange object (as described above).
-                KeyChange param = innerJWS.GetPayload<KeyChange>();
+                ChangeKey param = innerJWS.GetPayload<ChangeKey>();
 
                 // Check that the "url" parameters of the inner and outer JWSs are the same.
                 if (reqProtected.Url != innerProtected.Url)
