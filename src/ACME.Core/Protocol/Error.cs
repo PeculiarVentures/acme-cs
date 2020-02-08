@@ -14,8 +14,13 @@ namespace PeculiarVentures.ACME.Protocol
         [JsonProperty("detail")]
         public string Detail { get; set; }
 
+#if DEBUG
+        [JsonProperty("stack")]
+        public string Stack { get; set; }
+#endif
+
         [JsonProperty("subproblems")]
-        public Error[] SubPropems { get; set; }
+        public Error[] SubProblems { get; set; }
 
         public static implicit operator Exception(Error error)
         {
@@ -28,6 +33,9 @@ namespace PeculiarVentures.ACME.Protocol
             {
                 Type = ErrorType.ServerInternal,
                 Detail = exception.Message,
+#if DEBUG
+                Stack = exception.StackTrace,
+#endif
             };
         }
 
@@ -43,7 +51,10 @@ namespace PeculiarVentures.ACME.Protocol
             return new Error
             {
                 Type = exception.Type,
-                Detail = exception.Message,
+                Detail = exception.StackTrace,
+#if DEBUG
+                Stack = exception.StackTrace,
+#endif
             };
         }
     }

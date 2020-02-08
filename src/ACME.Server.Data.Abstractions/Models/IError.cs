@@ -10,6 +10,6 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
 
         string Detail { get; set; }
 
-        ICollection<Error> SubPropems { get; set; }
+        ICollection<IError> SubProblems { get; set; }
     }
 }

@@ -9,7 +9,7 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// <summary>
         /// The identifier that the account is authorized to represent.
         /// </summary>
-        ICollection<IIdentifier> Identifier { get; set; }
+        IIdentifier Identifier { get; set; }
 
         /// <summary>
         /// The status of this authorization.
@@ -19,12 +19,12 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// <summary>
         /// The timestamp after which the server will consider this authorization invalid
         /// </summary>
-        public DateTime Expires { get; set; }
+        public DateTime? Expires { get; set; }
 
         /// <summary>
         /// An array of challenges
         /// </summary>
-        public List<Challenge> Challenges { get; set; }
+        public ICollection<IChallenge> Challenges { get; set; }
 
         /// <summary>
         /// This field MUST be present and true
@@ -33,5 +33,7 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// domain name.For other authorizations, it MUST be absent
         /// </summary>
         public bool? Wildcard { get; set; }
+
+        public int AccountId { get; set; }
     }
 }

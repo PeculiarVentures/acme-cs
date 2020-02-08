@@ -2,6 +2,7 @@
 {
     public interface ICertificate : IBaseObject
     {
+        string Thumbprint { get; set; }
         byte[] RawData { get; set; }
     }
 }

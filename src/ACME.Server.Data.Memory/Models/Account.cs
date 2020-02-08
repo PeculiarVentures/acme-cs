@@ -10,10 +10,11 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Models
     public class Account : BaseObject, IAccount
     {
         public AccountStatus Status { get; set; }
-        public JsonWebKey PublicKey { get; set; }
+        public JsonWebKey Key { get; set; }
         public bool TermsOfServiceAgreed { get; set; }
         public object ExternalAccountBinding { get; set; }
         public ICollection<string> Contacts { get; set; } = new List<string>();
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public static implicit operator Account(NewAccount @params)
         {

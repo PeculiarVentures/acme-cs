@@ -10,6 +10,10 @@ namespace PeculiarVentures.ACME.Server.Controllers
         AcmeResponse GetDirectory();
         AcmeResponse GetNonce(AcmeRequest request);
         AcmeResponse PostAccount(AcmeRequest request);
-        AcmeResponse PostOrder(AcmeRequest request);
+        AcmeResponse PostOrder(AcmeRequest request, int orderId);
+        AcmeResponse PostAuthorization(AcmeRequest acmeRequest, int authzId);
+        AcmeResponse PostChallenge(AcmeRequest request, int challengeId);
+        AcmeResponse FinalizeOrder(AcmeRequest request, int orderId);
+        AcmeResponse GetCertificate(AcmeRequest acmeRequest, string id);
     }
 }

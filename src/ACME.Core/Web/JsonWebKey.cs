@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -175,6 +176,26 @@ namespace PeculiarVentures.ACME.Web
         {
             KeyType = KeyTypesEnum.OctetSequence;
             KeyValue = Base64Url.Encode(key.Key);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is JsonWebKey jwk)
+            {
+                return KeyType == jwk.KeyType
+                    && EllipticCurve == jwk.EllipticCurve
+                    && (KeyValue == null || KeyValue.SequenceEqual(jwk.KeyValue))
+                    && (Modulus == null || Modulus.SequenceEqual(jwk.Modulus))
+                    && (Exponent == null || Exponent.SequenceEqual(jwk.Exponent))
+                    && (X == null || X.SequenceEqual(jwk.X))
+                    && (Y == null || Y.SequenceEqual(jwk.Y));
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 }

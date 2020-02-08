@@ -1,11 +1,9 @@
 ﻿using System;
+using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 
-namespace PeculiarVentures.ACME.Protocol
+namespace PeculiarVentures.ACME.Server.Data.Memory.Models
 {
-    /// <summary>
-    /// JSON ACME Identifir object
-    /// </summary>
-    public class Identifier
+    public class Identifier : IIdentifier
     {
         public Identifier()
         {
@@ -17,27 +15,8 @@ namespace PeculiarVentures.ACME.Protocol
             Value = value;
         }
 
-        /// <summary>
-        /// The type of identifier.
-        /// </summary>
-        /// type (required, string)
         public string Type { get; set; }
-
-        /// <summary>
-        /// The identifier itself.
-        /// </summary>
-        /// value (required, string)
         public string Value { get; set; }
-
-        public int Compare(Identifier identifier, bool ignoreCase = false)
-        {
-            var res = string.Compare(Type, identifier.Type, ignoreCase);
-            if (res == 0)
-            {
-                res = string.Compare(Value, identifier.Value, ignoreCase);
-            }
-            return res;
-        }
 
         public override bool Equals(object obj)
         {

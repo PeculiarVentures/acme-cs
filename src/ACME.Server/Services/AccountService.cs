@@ -1,6 +1,7 @@
 ﻿using System;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Protocol.Messages;
+using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 using PeculiarVentures.ACME.Web;
 
@@ -15,21 +16,13 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public IAccountRepository AccountRepository { get; }
 
-        public Account GetById(int id)
+        public IAccount GetById(int id)
         {
-            var account = AccountRepository.GetById(id);
-            if (account == null)
-            {
-
-                throw new AccountDoesNotExistException();
-            }
-
-            return account == null
-                ? null
-                : AccountRepository.Convert(account);
+            return AccountRepository.GetById(id)
+                ?? throw new AccountDoesNotExistException();
         }
 
-        public Account GetByPublicKey(JsonWebKey key)
+        public IAccount FindByPublicKey(JsonWebKey key)
         {
             #region Check arguments
             if (key is null)
@@ -38,21 +31,17 @@ namespace PeculiarVentures.ACME.Server.Services
             }
             #endregion
 
-            var account = AccountRepository.FindByPublicKey(key);
-
-            return account == null
-                ? null
-                : AccountRepository.Convert(account);
+            return AccountRepository.FindByPublicKey(key);
         }
 
-        public Account Create(JsonWebKey key, NewAccount @params)
+        public IAccount Create(JsonWebKey key, NewAccount @params)
         {
             var account = AccountRepository.Create(key, @params);
             account = AccountRepository.Add(account);
-            return AccountRepository.Convert(account);
+            return account;
         }
 
-        public Account Update(int accountId, string[] contacts)
+        public IAccount Update(int accountId, string[] contacts)
         {
             // Get account
             var account = AccountRepository.GetById(accountId);
@@ -68,10 +57,10 @@ namespace PeculiarVentures.ACME.Server.Services
             account = AccountRepository.Update(account);
 
             // Return JSON
-            return AccountRepository.Convert(account);
+            return account;
         }
 
-        public Account Deactivate(int accountId)
+        public IAccount Deactivate(int accountId)
         {
             // Get account
             var account = AccountRepository.GetById(accountId);
@@ -87,10 +76,10 @@ namespace PeculiarVentures.ACME.Server.Services
             account = AccountRepository.Update(account);
 
             // Return JSON
-            return AccountRepository.Convert(account);
+            return account;
         }
 
-        public Account Revoke(int accountId)
+        public IAccount Revoke(int accountId)
         {
             // Get account
             var account = AccountRepository.GetById(accountId);
@@ -106,10 +95,10 @@ namespace PeculiarVentures.ACME.Server.Services
             account = AccountRepository.Update(account);
 
             // Return JSON
-            return AccountRepository.Convert(account);
+            return account;
         }
 
-        public Account ChangeKey(int accountId, JsonWebKey key)
+        public IAccount ChangeKey(int accountId, JsonWebKey key)
         {
             #region Check arguments
             if (key is null)
@@ -128,17 +117,18 @@ namespace PeculiarVentures.ACME.Server.Services
             // Check key
             if (AccountRepository.FindByPublicKey(key) != null)
             {
+                // TODO ACME Exception. Use RFC
                 throw new ArgumentException(nameof(key));
             }
 
             // Change key
-            account.PublicKey = key;
+            account.Key = key;
 
             // Save changes
             AccountRepository.Update(account);
 
             // Return JSON
-            return AccountRepository.Convert(account);
+            return account;
         }
     }
 }

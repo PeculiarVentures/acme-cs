@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using PeculiarVentures.ACME.Server;
 
 namespace AspNetCore.Server
 {
@@ -32,8 +33,12 @@ namespace AspNetCore.Server
                     o.SerializerSettings.Formatting = Formatting.Indented;
                 });
 
+            
             services.AddAcmeMemoryRepositories();
-            services.AddAcmeServerServices();
+            services.AddAcmeServerServices(o => {
+                o.EnrollmentHandler = new CertificateEnrollmentHandler();
+                o.DownloadCertificateFormat = DownloadCertificateFormat.PemCertificateChain;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

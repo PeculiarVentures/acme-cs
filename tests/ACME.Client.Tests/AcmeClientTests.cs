@@ -137,7 +137,7 @@ namespace PeculiarVentures.ACME.Client
             });
             Assert.NotNull(order);
             Assert.Equal(OrderStatus.Pending, order.Status);
-            Assert.Equal(identifiers.Count, order.Identifiers.Count);
+            Assert.Equal(identifiers.Count, order.Identifiers.Length);
             Assert.Single(order.Authorizations);
             Assert.NotNull(order.Finalize);
         }
