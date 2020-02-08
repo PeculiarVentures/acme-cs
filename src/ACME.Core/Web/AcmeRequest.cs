@@ -14,7 +14,7 @@ namespace PeculiarVentures.ACME.Web
 
         public JsonWebSignature Token { get; set; }
 
-        public JsonWebKey PublicKey
+        public JsonWebKey Key
         {
             get
             {
@@ -42,7 +42,25 @@ namespace PeculiarVentures.ACME.Web
 
         public object Content { get; set; }
         public string Method { get; set; }
+        public string Url
+        {
+            get
+            {
+                if (Token != null)
+                {
+                    var header = Token.GetProtected();
+                    return header.Url;
+                }
+                return null;
+            }
+        }
 
+        /// <summary>
+        /// Converts content to specified type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="MalformedException"/>
         public T GetContent<T>()
         {
             try

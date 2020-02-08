@@ -10,7 +10,10 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return collection
                 .AddSingleton<INonceRepository, NonceRepository>()
-                .AddSingleton<IAccountRepository, AccountRepository>();
+                .AddSingleton<IAccountRepository, AccountRepository>()
+                .AddSingleton<IAuthorizationRepository, AuthorizationRepository>()
+                .AddSingleton<IOrderRepository, OrderRepository>()
+                .AddSingleton<IChallengeRepository, ChallengeRepository>();
         }
     }
 }

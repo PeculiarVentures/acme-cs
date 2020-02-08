@@ -10,7 +10,10 @@ namespace PeculiarVentures.ACME
         public AcmeException(string message) : base(message)
         {
         }
-
+        public AcmeException(ErrorType type, string message) : base(message)
+        {
+            Type = type;
+        }
         public AcmeException(string message, Exception innerException) : base(message, innerException)
         {
         }

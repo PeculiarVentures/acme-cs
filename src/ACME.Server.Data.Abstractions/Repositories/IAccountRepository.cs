@@ -10,7 +10,5 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Repositories
     {
         IAccount FindByPublicKey(JsonWebKey publicKey);
         IAccount Create(JsonWebKey key, NewAccount @params);
-
-        Account Convert(IAccount account);
     }
 }

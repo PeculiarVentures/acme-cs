@@ -37,7 +37,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// identifiers (required, array of object)
         [JsonProperty("identifiers")]
         [JsonRequired]
-        public List<Identifier> Identifiers { get; set; } = new List<Identifier>();
+        public Identifier[] Identifiers { get; set; } = new Identifier[0];
 
         /// <summary>
         /// The requested value of the notBefore field in the certificate.
@@ -66,7 +66,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// authorizations (required, array of string)
         [JsonProperty("authorizations")]
         [JsonRequired]
-        public List<string> Authorizations { get; set; } = new List<string>();
+        public string[] Authorizations { get; set; } = new string[0];
 
         /// <summary>
         /// A URL that a CSR must be POSTed to once
@@ -84,5 +84,8 @@ namespace PeculiarVentures.ACME.Protocol
         /// certificate (optional, string)
         [JsonProperty("certificate")]
         public string Certificate { get; set; }
+
+        [JsonIgnore]
+        public int Id { get; set; }
     }
 }

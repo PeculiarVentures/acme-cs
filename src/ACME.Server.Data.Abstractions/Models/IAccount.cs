@@ -9,12 +9,13 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
     {
         AccountStatus Status { get; set; }
 
-        JsonWebKey PublicKey { get; set; }
+        JsonWebKey Key { get; set; }
 
         bool TermsOfServiceAgreed { get; set; }
 
         object ExternalAccountBinding { get; set; }
 
         ICollection<string> Contacts { get; set; }
+        DateTime CreatedAt { get; set; }
     }
 }

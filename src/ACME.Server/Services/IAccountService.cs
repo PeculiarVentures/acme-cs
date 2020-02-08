@@ -1,5 +1,5 @@
-﻿using PeculiarVentures.ACME.Protocol;
-using PeculiarVentures.ACME.Protocol.Messages;
+﻿using PeculiarVentures.ACME.Protocol.Messages;
+using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
@@ -12,21 +12,22 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <param name="key"></param>
         /// <param name="params"></param>
         /// <returns></returns>
-        Account Create(JsonWebKey key, NewAccount @params);
-        Account Deactivate(int accountId);
+        IAccount Create(JsonWebKey key, NewAccount @params);
+        IAccount Deactivate(int accountId);
         /// <summary>
         /// Returns account by specified Id
         /// </summary>
         /// <param name="id"></param>
-        /// <returns></returns>
-        Account GetById(int id);
+        /// <returns>Account</returns>
+        /// <exception cref="AccountDoesNotExistException"/>
+        IAccount GetById(int id);
         /// <summary>
         /// Returns account by specified JWK
         /// </summary>
         /// <param name="key"></param>
-        /// <returns></returns>
-        Account GetByPublicKey(JsonWebKey key);
-        Account Revoke(int accountId);
+        /// <returns>Account or Null</returns>
+        IAccount FindByPublicKey(JsonWebKey key);
+        IAccount Revoke(int accountId);
         /// <summary>
         /// Updates an account
         /// </summary>
@@ -34,7 +35,7 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <param name="contacts"></param>
         /// <returns></returns>
         /// <exception cref="AccountDoesNotExistException"/>
-        Account Update(int accountId, string[] contacts);
-        Account ChangeKey(int accountId, JsonWebKey key);
+        IAccount Update(int accountId, string[] contacts);
+        IAccount ChangeKey(int accountId, JsonWebKey key);
     }
 }

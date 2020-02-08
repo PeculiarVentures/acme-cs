@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
+using PeculiarVentures.ACME.Server.Data.Memory.Models;
 
 namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 {
-    public class BaseRepository<T> : IBaseRepository<T>
+    public abstract class BaseRepository<T> : IBaseRepository<T>
         where T : IBaseObject
     {
         private int _lastId = 0;
@@ -22,9 +23,11 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
             return item;
         }
 
-        public T Create()
+        public abstract T Create();
+
+        public IError CreateError()
         {
-            return (T)Activator.CreateInstance(typeof(T));
+            return new Error();
         }
 
         public T GetById(int id)
@@ -41,5 +44,7 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
         {
             return item;
         }
+
+
     }
 }
