@@ -14,7 +14,7 @@ namespace PeculiarVentures.ACME.Client
     /// <see cref="https://tools.ietf.org/html/rfc8555"/>
     public class AcmeClient
     {
-        private readonly HttpClient _http = new HttpClient();
+        private readonly HttpClient _http;
 
         private readonly ILogger _logger;
 
@@ -26,16 +26,21 @@ namespace PeculiarVentures.ACME.Client
 
         public string Location { get; set; }
 
-        private AcmeClient(Uri rootUrl, AsymmetricAlgorithm key, ILogger logger = null)
+        private AcmeClient(HttpClient http, AsymmetricAlgorithm key, ILogger logger = null)
         {
             Key = key;
-            _http.BaseAddress = rootUrl;
+            _http = http;
             _logger = logger;
         }
 
         public static async Task<AcmeClient> CreateAsync(Uri rootUrl, AsymmetricAlgorithm key, ILogger logger = null)
         {
-            var client = new AcmeClient(rootUrl, key, logger);
+            return await CreateAsync(new HttpClient { BaseAddress = rootUrl }, key, logger);
+        }
+
+        public static async Task<AcmeClient> CreateAsync(HttpClient http, AsymmetricAlgorithm key, ILogger logger = null)
+        {
+            var client = new AcmeClient(http, key, logger);
 
             client._logger?.LogInformation($"{nameof(AcmeClient)} is starting.");
 
