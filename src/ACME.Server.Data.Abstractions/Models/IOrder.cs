@@ -28,28 +28,28 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// <summary>
         /// The requested value of the notBefore field in the certificate.
         /// </summary>
-        public DateTime? NotBefore { get; set; }
+        DateTime? NotBefore { get; set; }
 
         /// <summary>
         /// The requested value of the notAfter field in the certificate.
         /// </summary>
-        public DateTime? NotAfter { get; set; }
+        DateTime? NotAfter { get; set; }
 
         /// <summary>
         /// The error that occurred while processing the order, if any.
         /// </summary>
-        public IError Error { get; set; }
+        IError Error { get; set; }
 
         /// <summary>
         /// An array of authorization objects
         /// </summary>
-        public ICollection<IAuthorization> Authorizations { get; set; }
+        ICollection<IAuthorization> Authorizations { get; set; }
 
         /// <summary>
         /// Enrolled certificate id
         /// </summary>
         /// <remarks>Controllers layer MUST compleate this value to full URI path</remarks>
-        public ICertificate Certificate { get; set; }
+        ICertificate Certificate { get; set; }
 
         int AccountId { get; set; }
     }

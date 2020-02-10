@@ -14,17 +14,17 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// <summary>
         /// The status of this authorization.
         /// </summary>
-        public AuthorizationStatus Status { get; set; }
+        AuthorizationStatus Status { get; set; }
 
         /// <summary>
         /// The timestamp after which the server will consider this authorization invalid
         /// </summary>
-        public DateTime? Expires { get; set; }
+        DateTime? Expires { get; set; }
 
         /// <summary>
         /// An array of challenges
         /// </summary>
-        public ICollection<IChallenge> Challenges { get; set; }
+        ICollection<IChallenge> Challenges { get; set; }
 
         /// <summary>
         /// This field MUST be present and true
@@ -32,8 +32,8 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// containing a DNS identifier with a value that was a wildcard
         /// domain name.For other authorizations, it MUST be absent
         /// </summary>
-        public bool? Wildcard { get; set; }
+        bool? Wildcard { get; set; }
 
-        public int AccountId { get; set; }
+        int AccountId { get; set; }
     }
 }

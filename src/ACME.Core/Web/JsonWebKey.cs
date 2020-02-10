@@ -92,7 +92,10 @@ namespace PeculiarVentures.ACME.Web
                 Modulus = Base64Url.Decode(Modulus ?? throw new ArgumentNullException(nameof(Modulus))),
             };
 
-            return RSA.Create(@params);
+            var key = RSA.Create();
+            key.ImportParameters(@params);
+
+            return key;
         }
 
 
@@ -111,12 +114,20 @@ namespace PeculiarVentures.ACME.Web
 
         public ECDsa GetEcdsaKey()
         {
-            ECCurve curve = EllipticCurve switch
+            ECCurve curve;
+            switch (EllipticCurve)
             {
-                EllipticCurvesEnum.P256 => ECCurve.NamedCurves.nistP256,
-                EllipticCurvesEnum.P384 => ECCurve.NamedCurves.nistP384,
-                EllipticCurvesEnum.P512 => ECCurve.NamedCurves.nistP521,
-                _ => throw new ArgumentException($"Could not create ECCurve based on EllipticCurve: {EllipticCurve}"),
+                case EllipticCurvesEnum.P256:
+                    curve = ECCurve.NamedCurves.nistP256;
+                    break;
+                case EllipticCurvesEnum.P384:
+                    curve = ECCurve.NamedCurves.nistP384;
+                    break;
+                case EllipticCurvesEnum.P512:
+                    curve = ECCurve.NamedCurves.nistP521;
+                    break;
+                default:
+                    throw new ArgumentException($"Could not create ECCurve based on EllipticCurve: {EllipticCurve}");
             };
             var @params = new ECParameters
             {
@@ -153,16 +164,22 @@ namespace PeculiarVentures.ACME.Web
             Y = Base64Url.Encode(@params.Q.Y);
         }
 
-
-
         public HMAC GetHmacKey()
         {
-            var hashName = Algorithm switch
+            string hashName;
+            switch (Algorithm)
             {
-                AlgorithmsEnum.HS256 => "HMACSHA256",
-                AlgorithmsEnum.HS384 => "HMACSHA384",
-                AlgorithmsEnum.HS512 => "HMACSHA512",
-                _ => throw new CryptographicException($"Unsupported hash algorithm '{Algorithm}'"),
+                case AlgorithmsEnum.HS256:
+                    hashName = "HMACSHA256";
+                    break;
+                case AlgorithmsEnum.HS384:
+                    hashName = "HMACSHA384";
+                    break;
+                case AlgorithmsEnum.HS512:
+                    hashName = "HMACSHA512";
+                    break;
+                default:
+                    throw new CryptographicException($"Unsupported hash algorithm '{Algorithm}'");
             };
             HMAC hmac = HMAC.Create(hashName);
             hmac.Key = Base64Url.Decode(KeyValue);

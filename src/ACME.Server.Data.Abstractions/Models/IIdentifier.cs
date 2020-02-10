@@ -6,11 +6,11 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// <summary>
         /// The type of identifier.
         /// </summary>
-        public string Type { get; set; }
+        string Type { get; set; }
 
         /// <summary>
         /// The identifier itself.
         /// </summary>
-        public string Value { get; set; }
+        string Value { get; set; }
     }
 }

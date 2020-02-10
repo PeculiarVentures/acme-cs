@@ -246,7 +246,7 @@ namespace PeculiarVentures.ACME.Cryptography
 
                 var name = ((DerBmpString)seq[0]).GetString();
                 var value = ((DerBmpString)seq[1]).GetString();
-                var paramName = Enum.Parse<EnrollmentNameValuePairsEnum>(name, true);
+                var paramName = (EnrollmentNameValuePairsEnum)Enum.Parse(typeof(EnrollmentNameValuePairsEnum), name, true);
 
                 #region Sets propertie
                 switch (paramName)
@@ -259,12 +259,12 @@ namespace PeculiarVentures.ACME.Cryptography
                         break;
                     case EnrollmentNameValuePairsEnum.CertificateUsage:
                         var oidsStrig = value.Replace(" ", "");
-                        var oidsArray = oidsStrig.Split(",");
+                        var oidsArray = oidsStrig.Split(',');
                         var oids = oidsArray.Select(o => new Oid(o));
                         CertificateUsage = oids.ToArray();
                         break;
                     case EnrollmentNameValuePairsEnum.ValidityPeriod:
-                        ValidityPeriod = Enum.Parse<ValidityPeriodEnum>(value, true);
+                        ValidityPeriod = (ValidityPeriodEnum)Enum.Parse(typeof(ValidityPeriodEnum), value, true);
                         break;
                     case EnrollmentNameValuePairsEnum.ValidityPeriodUnits:
                         ValidityPeriodUnits = int.Parse(value);

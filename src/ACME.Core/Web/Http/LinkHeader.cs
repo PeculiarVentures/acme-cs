@@ -53,7 +53,7 @@ namespace PeculiarVentures.ACME.Web.Http
 
             result.Url = new Uri(match.Groups[1].Value);
             var attributes = match.Groups[2].Value
-                .Split(";")
+                .Split(';')
                 .Select(LinkHeaderItem.Parse)
                 .ToArray();
 
