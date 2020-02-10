@@ -11,11 +11,12 @@ using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Client
 {
+    /// <see cref="https://tools.ietf.org/html/rfc8555"/>
     public class AcmeClient
     {
-        private readonly HttpClient Http = new HttpClient();
+        private readonly HttpClient _http = new HttpClient();
 
-        private readonly ILogger Logger;
+        private readonly ILogger _logger;
 
         public AsymmetricAlgorithm Key { get; private set; }
 
@@ -28,20 +29,20 @@ namespace PeculiarVentures.ACME.Client
         private AcmeClient(Uri rootUrl, AsymmetricAlgorithm key, ILogger logger = null)
         {
             Key = key;
-            Http.BaseAddress = rootUrl;
-            Logger = logger;
+            _http.BaseAddress = rootUrl;
+            _logger = logger;
         }
 
         public static async Task<AcmeClient> CreateAsync(Uri rootUrl, AsymmetricAlgorithm key, ILogger logger = null)
         {
             var client = new AcmeClient(rootUrl, key, logger);
 
-            client.Logger?.LogInformation($"{nameof(AcmeClient)} is starting.");
+            client._logger?.LogInformation($"{nameof(AcmeClient)} is starting.");
 
             await client.DirectoryGetAsync();
             await client.NonceGetAsync();
 
-            client.Logger?.LogInformation($"{nameof(AcmeClient)} is ready.");
+            client._logger?.LogInformation($"{nameof(AcmeClient)} is ready.");
 
             return client;
         }
@@ -113,9 +114,9 @@ namespace PeculiarVentures.ACME.Client
                 request.Content.Headers.ContentType = MediaTypeHeader.JsonContentTypeHeaderValue;
             }
 
-            Logger?.LogDebug($"{nameof(AcmeClient)} request \nParameters: \n{request} \nContent: \n{content}");
+            _logger?.LogDebug($"{nameof(AcmeClient)} request \nParameters: \n{request} \nContent: \n{content}");
 
-            var response = await Http.SendAsync(request);
+            var response = await _http.SendAsync(request);
 
             if (!skipNonce)
             {
@@ -143,7 +144,7 @@ namespace PeculiarVentures.ACME.Client
 
                 var ex = new AcmeException(message, error);
 
-                Logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
+                _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 
                 throw ex;
             }
@@ -168,7 +169,7 @@ namespace PeculiarVentures.ACME.Client
         {
             var content = await response.Content.ReadAsStringAsync();
 
-            Logger?.LogDebug($"{nameof(AcmeClient)} response \nParameters: \n{response} \nContent: \n{content}");
+            _logger?.LogDebug($"{nameof(AcmeClient)} response \nParameters: \n{response} \nContent: \n{content}");
 
             return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync());
         }
@@ -203,7 +204,7 @@ namespace PeculiarVentures.ACME.Client
             {
                 var ex = new AcmeException("Account creation response does not include Location header.");
 
-                Logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
+                _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 
                 throw ex;
             }
@@ -227,7 +228,7 @@ namespace PeculiarVentures.ACME.Client
             {
                 var ex = new AcmeException("Account creation response does not include Location header.");
 
-                Logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
+                _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 
                 throw ex;
             }
