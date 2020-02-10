@@ -15,15 +15,6 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
             return new Models.Order();
         }
 
-        public ICertificate CreateCertificate(X509Certificate2 testCert)
-        {
-            return new Models.Certificate
-            {
-                RawData = testCert.RawData,
-                Thumbprint = testCert.Thumbprint,
-            };
-        }
-
         public IOrder GetByIdentifiers(int accountId, Identifier[] identifiers)
         {
             if (identifiers is null)

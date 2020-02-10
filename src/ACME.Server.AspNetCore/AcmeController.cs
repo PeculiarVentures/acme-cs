@@ -214,10 +214,9 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         {
             var response = Controller.GetCertificate(GetAcmeRequest(token), id);
 
-            if (response.Content is ICertificate[] certs)
+            if (response.Content is MediaTypeContent content)
             {
-                var rawData = certs.First().RawData;
-                return Content($"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(rawData)}\n-----END CERTIFICATE-----", "application/pem-certificate-chain");
+                return new FileStreamResult(content.Content, content.Type);
             }
             else
             {

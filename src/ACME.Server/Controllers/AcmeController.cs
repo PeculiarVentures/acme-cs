@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Protocol.Messages;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
@@ -17,7 +20,8 @@ namespace PeculiarVentures.ACME.Server.Controllers
             IOrderService orderService,
             IChallengeService challengeService,
             IAuthorizationService authorizationService,
-            IConverterService converterService)
+            IConverterService converterService,
+            IOptions<ServerOptions> options)
         {
             DirectoryService = directoryService ?? throw new ArgumentNullException(nameof(directoryService));
             NonceService = nonceService ?? throw new ArgumentNullException(nameof(nonceService));
@@ -26,6 +30,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             ChallengeService = challengeService ?? throw new ArgumentNullException(nameof(challengeService));
             AuthorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));
             ConverterService = converterService ?? throw new ArgumentNullException(nameof(converterService));
+            Options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         public IDirectoryService DirectoryService { get; }
@@ -35,6 +40,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         public IChallengeService ChallengeService { get; }
         public IAuthorizationService AuthorizationService { get; }
         public IConverterService ConverterService { get; }
+        public IOptions<ServerOptions> Options { get; }
 
         public AcmeResponse CreateResponse()
         {
@@ -410,7 +416,28 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 var account = GetAccount(request.KeyId);
                 var certs = OrderService.GetCertificate(account.Id, thumbprint);
 
-                response.Content = certs;
+                switch (Options.Value.DownloadCertificateFormat)
+                {
+                    case DownloadCertificateFormat.PemCertificateChain:
+                        {
+                            var pem = PemConverter.Encode(certs.Select(o => o.RawData).ToArray(), "certificate");
+                            response.Content = new MediaTypeContent("application/pem-certificate-chain", pem);
+                        }
+                        break;
+                    case DownloadCertificateFormat.PkixCert:
+                        {
+                            var cert = new X509Certificate2(certs[0].RawData);
+                            response.Content = new MediaTypeContent("application/pkix-cert", cert.RawData);
+                        }
+                        break;
+                    case DownloadCertificateFormat.Pkcs7Mime:
+                        {
+                            var x509Certs = certs.Select(o => new X509Certificate2(o.RawData)).ToArray();
+                            var x509Collection = new X509Certificate2Collection(x509Certs);
+                            response.Content = new MediaTypeContent("application/pkcs7-mime", x509Collection.Export(X509ContentType.Pkcs7));
+                        }
+                        break;
+                }
             }, request);
         }
     }

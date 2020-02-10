@@ -16,6 +16,5 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Repositories
         /// <param name="identifiers"></param>
         /// <returns>Order or null</returns>
         IOrder GetByIdentifiers(int accountId, Identifier[] identifiers);
-        ICertificate CreateCertificate(X509Certificate2 testCert);
     }
 }

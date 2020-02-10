@@ -13,7 +13,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IAccountRepository, AccountRepository>()
                 .AddSingleton<IAuthorizationRepository, AuthorizationRepository>()
                 .AddSingleton<IOrderRepository, OrderRepository>()
-                .AddSingleton<IChallengeRepository, ChallengeRepository>();
+                .AddSingleton<IChallengeRepository, ChallengeRepository>()
+                .AddSingleton<ICertificateRepository, CertificateRepository>();
         }
     }
 }
