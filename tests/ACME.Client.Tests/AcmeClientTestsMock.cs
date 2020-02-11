@@ -28,8 +28,6 @@ namespace PeculiarVentures.ACME.Client
                 Meta = new Protocol.DirectoryMetadata(),
             };
 
-
-
             mockHttp
                 .When(HttpMethod.Get, $"{_url}directory")
                 .Respond(HttpStatusCode.OK, "application/json", JsonConvert.SerializeObject(dir));

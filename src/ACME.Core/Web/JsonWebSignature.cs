@@ -195,6 +195,16 @@ namespace PeculiarVentures.ACME.Web
 
 
 
+        public void Sign(HMAC key)
+        {
+            byte[] data = ToByteSign();
+            byte[] signedData = key.ComputeHash(data);
+
+            Signature = Base64Url.Encode(signedData);
+        }
+
+
+
         public void Sign(SymmetricAlgorithm key)
         {
             throw new NotImplementedException();
