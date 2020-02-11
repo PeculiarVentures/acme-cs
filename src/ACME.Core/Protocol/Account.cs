@@ -38,7 +38,6 @@ namespace PeculiarVentures.ACME.Protocol
         [JsonProperty("termsOfServiceAgreed")]
         public bool? TermsOfServiceAgreed { get; set; }
 
-
         /// <summary>
         /// Including this field in a newAccount request indicates approval
         /// by the holder of an existing non-ACME account to bind that account
@@ -78,7 +77,6 @@ namespace PeculiarVentures.ACME.Protocol
         /// </summary>
         [JsonProperty("agreement")]
         public string Agreement { get; set; }
-
 
         /// <summary>
         /// Related for LE.
