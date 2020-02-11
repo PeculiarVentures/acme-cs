@@ -7,6 +7,6 @@ namespace PeculiarVentures.ACME.Server.Services
     {
         IChallenge GetById(int id);
         void Validate(IChallenge challenge);
-        IChallenge Create(int accountId, string type);
+        IChallenge Create(int accountId, IIdentifier identifier, string type);
     }
 }

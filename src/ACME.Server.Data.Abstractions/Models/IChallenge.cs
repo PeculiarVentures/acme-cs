@@ -27,5 +27,6 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         IError Error { get; set; }
         string Token { get; set; }
         int AccountId { get; set; }
+        IIdentifier Identifier { get; set; }
     }
 }

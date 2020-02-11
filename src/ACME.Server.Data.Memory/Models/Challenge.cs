@@ -13,5 +13,6 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Models
         public int Id { get; set; }
         public string Token { get; set; }
         public int AccountId { get; set; }
+        public IIdentifier Identifier { get; set; }
     }
 }

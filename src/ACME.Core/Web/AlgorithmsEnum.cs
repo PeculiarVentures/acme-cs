@@ -148,5 +148,12 @@ namespace PeculiarVentures.ACME.Web
 
         [EnumMember(Value = "HS1")]
         HS1,
+
+        [EnumMember(Value = "SHA1")]
+        SHA1,
+
+        [EnumMember(Value = "SHA256")]
+        SHA256,
+
     }
 }

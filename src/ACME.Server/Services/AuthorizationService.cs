@@ -27,9 +27,9 @@ namespace PeculiarVentures.ACME.Server.Services
             authz.Status = AuthorizationStatus.Pending;
 
             // Add challenges
-            var http = ChallengeService.Create(accountId, "http-01");
-            var tls = ChallengeService.Create(accountId, "tls-01");
-            var dns = ChallengeService.Create(accountId, "dns-01");
+            var http = ChallengeService.Create(accountId, authz.Identifier, "http-01");
+            var tls = ChallengeService.Create(accountId, authz.Identifier, "tls-01");
+            var dns = ChallengeService.Create(accountId, authz.Identifier, "dns-01");
 
             authz.Challenges.Add(http);
             authz.Challenges.Add(tls);

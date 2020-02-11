@@ -1,6 +1,8 @@
-﻿using System;
+using System;
+using System.Collections;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using PeculiarVentures.ACME.Helpers;
@@ -50,7 +52,60 @@ namespace PeculiarVentures.ACME.Web
 
         }
 
+        /// <summary>
+        /// Gets thumbprint of JWK
+        /// </summary>
+        /// <param name="alg">Default SHA256</param>
+        /// <returns></returns>
+        public byte[] GetThumbprint(AlgorithmsEnum alg = AlgorithmsEnum.SHA256)
+        {
+            var listKeys = new SortedList();
+            if (KeyType != null)
+            {
+                listKeys.Add("kty", KeyType.Value.ToString());
+            }
+            if (Exponent != null)
+            {
+                listKeys.Add("e", Exponent);
+            }
+            if (Modulus != null)
+            {
+                listKeys.Add("n", Modulus);
+            }
+            if (Y != null)
+            {
+                listKeys.Add("y", Y);
+            }
+            if (X != null)
+            {
+                listKeys.Add("x", X);
+            }
+            if (EllipticCurve != null)
+            {
+                listKeys.Add("crv", EllipticCurve.Value.ToString());
+            }
+            if (KeyValue != null)
+            {
+                listKeys.Add("k", KeyValue);
+            }
+            var json = JsonConvert.SerializeObject(listKeys);
 
+            byte[] thumbprint;
+            switch (alg)
+            {
+                case AlgorithmsEnum.SHA256:
+                    SHA256 mySHA256 = SHA256.Create();
+                    thumbprint = mySHA256.ComputeHash(Encoding.UTF8.GetBytes(json));
+                    break;
+                case AlgorithmsEnum.SHA1:
+                    SHA1 mySHA1 = SHA1.Create();
+                    thumbprint = mySHA1.ComputeHash(Encoding.UTF8.GetBytes(json));
+                    break;
+                default:
+                    throw new ArgumentException($"Unsupported algorithm: {nameof(alg)}");
+            }
+            return thumbprint;
+        }
 
         public JsonWebKey(AsymmetricAlgorithm key)
         {

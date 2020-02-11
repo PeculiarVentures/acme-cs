@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.Security.Cryptography;
 using Xunit;
 
 namespace PeculiarVentures.ACME.Web
@@ -43,6 +44,23 @@ namespace PeculiarVentures.ACME.Web
             var key = jwk.GetHmacKey();
 
             Assert.True(key is HMAC);
+        }
+
+        [Fact]
+        public void GetThumbprint()
+        {
+            var jwk = new JsonWebKey
+            {
+                Exponent = "AQAB",
+                KeyType = KeyTypesEnum.RSA,
+                Modulus = "uHbYmn_4HqOwfI_yjqR9Zkf8fUnAQKLdAT60CED1d-UvRlpTkuJZSBtKfQn_fFAC23tk_zMhYR09rIapAh9DPAf_Bdd1APKEDg6xnPquq-iQdYO5KCBO4UDIaHapyjBPqRCRHuHwG-MPKvCBGeEIP1A0Nj3zmJPylP0VSZH5EpEf3ILqZmLFeYfOPbRLgTtJe4L61hE9UTf2JM8zpLkK6Y-sDFSxgHciNCt9RjmhTgc7oHxV06QADx9B8F02odvYPZXeGw_LGgDUncg_gdFPKWoDImDFvKCd5QKdQVbjn_W1LBwgFVaten-JX7JX00NvFDipPjZLNPie9c-qu9Rgqw",
+                Algorithm = AlgorithmsEnum.SHA256,
+                //KeyValue = "9RBR6ODDPlyBTxQlwdFvKRqqtFuMokffcn9k0TpzVvk",
+            };
+
+            var thumbprint = "r/8kxUe4SmBoIAIL4Br3+Edtn3yDnAPo7zlgK3Z4p/I=";
+
+            Assert.Equal(thumbprint, Convert.ToBase64String(jwk.GetThumbprint(AlgorithmsEnum.SHA256)));
         }
     }
 }
