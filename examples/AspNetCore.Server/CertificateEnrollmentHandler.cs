@@ -19,14 +19,11 @@ namespace AspNetCore.Server
             });
         }
 
-        public Task Revoke(X509Certificate2 certificate)
-        {
-            throw new NotImplementedException();
-        }
-
         public Task Revoke(IOrder order, RevokeReason reason)
         {
-            throw new NotImplementedException();
+            return Task.Run(() => {
+                // nothing
+            });
         }
     }
 }

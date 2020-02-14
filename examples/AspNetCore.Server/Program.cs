@@ -19,7 +19,7 @@ namespace AspNetCore.Server
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                System.Diagnostics.Debugger.Launch();
                 throw;
             }
         }
