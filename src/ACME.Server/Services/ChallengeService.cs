@@ -11,21 +11,28 @@ namespace PeculiarVentures.ACME.Server.Services
 {
     public class ChallengeService : IChallengeService
     {
-        public ChallengeService(IChallengeRepository challengeRepository, IAccountService accountService)
+
+        public ChallengeService(IChallengeRepository challengeRepository,
+                                IAccountService accountService,
+                                IAuthorizationRepository authorizationRepository)
         {
-            ChallengeRepository = challengeRepository ?? throw new ArgumentNullException(nameof(challengeRepository));
-            AccountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
+            ChallengeRepository = challengeRepository
+                ?? throw new ArgumentNullException(nameof(challengeRepository));
+            AccountService = accountService
+                ?? throw new ArgumentNullException(nameof(accountService));
+            AuthorizationRepository = authorizationRepository
+                ?? throw new ArgumentNullException(nameof(authorizationRepository));
         }
 
         private IChallengeRepository ChallengeRepository { get; }
         private IAccountService AccountService { get; }
+        private IAuthorizationRepository AuthorizationRepository { get; }
 
-        public IChallenge Create(int accountId, IIdentifier identifier, string type)
+        public IChallenge Create(int authzId, string type)
         {
             var challenge = ChallengeRepository.Create();
             challenge.Type = type;
-            challenge.AccountId = accountId;
-            challenge.Identifier = identifier;
+            challenge.AuthorizationId = authzId;
             challenge.Status = ChallengeStatus.Pending;
             var httpToken = new byte[20];
             new System.Security.Cryptography.RNGCryptoServiceProvider().GetBytes(httpToken);
@@ -36,9 +43,14 @@ namespace PeculiarVentures.ACME.Server.Services
             return challenge;
         }
 
+        public IChallenge[] GetByAuthorization(int id)
+        {
+            return ChallengeRepository.GetByAuthorization(id) ?? throw new MalformedException("Challenge does not exist");
+        }
+
         public IChallenge GetById(int id)
         {
-            return ChallengeRepository.GetById(id);
+            return ChallengeRepository.GetById(id) ?? throw new MalformedException("Challenge does not exist");
         }
 
         public void Validate(IChallenge challenge)
@@ -47,14 +59,13 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 challenge.Status = ChallengeStatus.Processing;
                 ChallengeRepository.Update(challenge);
-                var type = Enum.Parse(typeof(ChallengeType), challenge.Type, true);
-
+                
                 Task
                     .Run(() =>
                     {
-                        switch (type)
+                    switch (challenge.Type)
                         {
-                            case ChallengeType.http:
+                            case "http-01":
                                 ValidateHttpChallenge(challenge);
                                 break;
                             default:
@@ -78,6 +89,7 @@ namespace PeculiarVentures.ACME.Server.Services
                             if (challenge.Status == ChallengeStatus.Processing)
                             {
                                 challenge.Status = ChallengeStatus.Valid;
+                                challenge.Validated = DateTime.UtcNow;
                                 ChallengeRepository.Update(challenge);
                             }
                         }
@@ -92,7 +104,8 @@ namespace PeculiarVentures.ACME.Server.Services
 
         private void ValidateHttpChallenge(IChallenge challenge)
         {
-            var url = $"http://{challenge.Identifier.Value}/.well-known/acme-challenge/{challenge.Token}";
+            var authz = AuthorizationRepository.GetById(challenge.AuthorizationId) ?? throw new MalformedException("Cannot get Authorization by Id");
+            var url = $"http://{authz.Identifier.Value}/.well-known/acme-challenge/{challenge.Token}";
             var request = (HttpWebRequest)WebRequest.Create(url);
 
 #if !DEBUG
@@ -104,8 +117,8 @@ namespace PeculiarVentures.ACME.Server.Services
                 var text = reader.ReadToEnd();
 
                 //Accounts.GetById(challenge.Authorization.AccountId
-                var account = AccountService.GetById(challenge.AccountId);
-                var thumbprint = Convert.ToBase64String(account.Key.GetThumbprint());
+                var account = AccountService.GetById(authz.AccountId);
+                var thumbprint = Base64Url.Encode(account.Key.GetThumbprint());
                 var controlValue = $"{challenge.Token}.{thumbprint}";
 
                 if (!controlValue.Equals(text))

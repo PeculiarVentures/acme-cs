@@ -15,6 +15,9 @@
     <ProjectReference Include="..\..\src\ACME.Server\ACME.Server.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\ACME.Server.Data.EF.Core\ACME.Server.Data.EF.Core.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Controllers\" />

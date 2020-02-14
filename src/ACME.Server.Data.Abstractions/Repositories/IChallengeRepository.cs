@@ -6,5 +6,6 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Repositories
 {
     public interface IChallengeRepository : IBaseRepository<IChallenge>
     {
+        IChallenge[] GetByAuthorization(int authzId);
     }
 }

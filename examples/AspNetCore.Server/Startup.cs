@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using PeculiarVentures.ACME.Server;
+using PeculiarVentures.ACME.Server.Data.EF.Core;
 
 namespace AspNetCore.Server
 {
@@ -36,8 +38,9 @@ namespace AspNetCore.Server
                     o.SerializerSettings.Formatting = Formatting.Indented;
                 });
 
-            
-            services.AddAcmeMemoryRepositories();
+            services.AddAcmeEFCoreRepositories(o => {
+                o.UseNpgsql(Configuration.GetValue<string>("ConnectionStrings:DefaultConnection"));
+            });
             services.AddAcmeServerServices(o => {
                 o.EnrollmentHandler = new CertificateEnrollmentHandler();
                 o.DownloadCertificateFormat = DownloadCertificateFormat.PemCertificateChain;

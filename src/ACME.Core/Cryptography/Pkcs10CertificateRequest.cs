@@ -25,7 +25,6 @@ namespace PeculiarVentures.ACME.Cryptography
         private string _subject;
         private PublicKey _publicKey;
         private Oid _signatureAlgorithm;
-        private byte[] _signature;
         private bool _verify;
         #endregion
 
@@ -69,16 +68,6 @@ namespace PeculiarVentures.ACME.Cryptography
                 return _subject;
             }
         }
-
-        /*
-        public X500DistinguishedName SubjectName
-        {
-            get
-            {
-                new X500DistinguishedName(GetCertRequest().GetCertificationRequestInfo().Attributes)
-            }
-        }
-        */
 
         /// <summary>
         /// Public key
@@ -126,19 +115,6 @@ namespace PeculiarVentures.ACME.Cryptography
                     _signatureAlgorithm = new Oid(GetCertRequest().SignatureAlgorithm.Algorithm.Id);
                 }
                 return _signatureAlgorithm;
-            }
-        }
-
-        // TODO not use
-        private byte[] Signature
-        {
-            get
-            {
-                if (_signature == null)
-                {
-                    _signature = GetCertRequest().Signature.GetEncoded();
-                }
-                return _signature;
             }
         }
 
@@ -415,7 +391,6 @@ namespace PeculiarVentures.ACME.Cryptography
             _subject = null;
             _publicKey = null;
             _signatureAlgorithm = null;
-            _signature = null;
             _verify = false;
         }
 

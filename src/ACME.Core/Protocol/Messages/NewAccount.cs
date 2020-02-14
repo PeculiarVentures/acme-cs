@@ -1,5 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json;
+using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Protocol.Messages
 {
@@ -31,7 +32,7 @@ namespace PeculiarVentures.ACME.Protocol.Messages
         /// <remarks>This field is not updateable by the client</remarks>
         /// externalAccountBinding (optional, object)
         [JsonProperty("externalAccountBinding")]
-        public object ExternalAccountBinding { get; set; }
+        public JsonWebSignature ExternalAccountBinding { get; set; }
 
         /// <summary>
         /// If this field is present

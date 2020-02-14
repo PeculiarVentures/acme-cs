@@ -7,7 +7,7 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Repositories
     public interface IBaseRepository<T>
         where T : IBaseObject
     {
-        IEnumerable<T> Items { get; }
+        //IEnumerable<T> Items { get; }
 
         T GetById(int id);
 

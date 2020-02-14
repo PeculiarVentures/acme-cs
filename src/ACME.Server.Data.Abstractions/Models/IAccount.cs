@@ -13,7 +13,7 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
 
         bool TermsOfServiceAgreed { get; set; }
 
-        object ExternalAccountBinding { get; set; }
+        int? ExternalAccountId { get; set; }
 
         ICollection<string> Contacts { get; set; }
         DateTime CreatedAt { get; set; }

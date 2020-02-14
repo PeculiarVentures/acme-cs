@@ -10,15 +10,8 @@
     <WarningLevel>4</WarningLevel>
     <DefineConstants></DefineConstants>
     <WarningLevel></WarningLevel>
-    <DelaySign>false</DelaySign>
-    <PublicSign>false</PublicSign>
-    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
     <Nullable></Nullable>
   </PropertyGroup>
-  <ItemGroup>
-    <Folder Include="Repositories\" />
-    <Folder Include="Models\" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ACME.Core\ACME.Core.csproj" />
   </ItemGroup>

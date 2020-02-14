@@ -5,19 +5,16 @@ namespace PeculiarVentures.ACME
 {
     public class MalformedException : AcmeException
     {
-        public MalformedException()
+        public MalformedException() : base(ErrorType.Malformed)
         {
-            Type = ErrorType.Malformed;
         }
 
-        public MalformedException(string message) : base(message)
+        public MalformedException(string message) : base(ErrorType.Malformed, message)
         {
-            Type = ErrorType.Malformed;
         }
 
-        public MalformedException(string message, Exception innerException) : base(message, innerException)
+        public MalformedException(string message, Exception innerException) : base(ErrorType.Malformed, message, innerException)
         {
-            Type = ErrorType.Malformed;
         }
     }
 }

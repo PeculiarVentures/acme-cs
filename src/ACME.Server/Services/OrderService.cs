@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Cryptography;
@@ -11,25 +12,41 @@ using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Protocol.Messages;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
+using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
     public class OrderService : IOrderService
     {
+        private const string IDENTIFIER_HASH = "SHA256";
+
         public OrderService(
-            IOrderRepository orderRepository, IAuthorizationService authorizationService,
-            IOptions<ServerOptions> options, ICertificateRepository certificateRepository)
+            IOrderRepository orderRepository,
+            IAuthorizationService authorizationService,
+            IOrderAuthorizationRepository orderAuthorizationRepository,
+            IOptions<ServerOptions> options)
         {
             OrderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
             AuthorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));
-            Options = options ?? throw new ArgumentNullException(nameof(options));
-            CertificateRepository = certificateRepository ?? throw new ArgumentNullException(nameof(certificateRepository));
+            OrderAuthorizationRepository = orderAuthorizationRepository ?? throw new ArgumentNullException(nameof(orderAuthorizationRepository));
+            Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
         public IOrderRepository OrderRepository { get; }
         public IAuthorizationService AuthorizationService { get; }
-        public IOptions<ServerOptions> Options { get; }
-        public ICertificateRepository CertificateRepository { get; }
+        public IOrderAuthorizationRepository OrderAuthorizationRepository { get; }
+        public ServerOptions Options { get; }
+
+        public string ComputerIdentifier(Identifier[] identifiers, string hashAlgorithm)
+        {
+            var strIdentifiers = identifiers
+                .Select(o => $"{o.Type}:{o.Value}".ToLower())
+                .OrderBy(o => o)
+                .ToArray();
+            var str = string.Join(";", strIdentifiers);
+            var hash = HashAlgorithm.Create(hashAlgorithm).ComputeHash(Encoding.UTF8.GetBytes(str));
+            return Base64Url.Encode(hash);
+        }
 
         public IOrder Create(int accountId, NewOrder @params)
         {
@@ -44,15 +61,29 @@ namespace PeculiarVentures.ACME.Server.Services
 
             order.AccountId = accountId;
 
+            order = OrderRepository.Add(order);
+
+            var listDate = new List<DateTime>();
             foreach (var identifier in @params.Identifiers)
             {
                 var authz = AuthorizationService.GetActual(accountId, identifier)
                     ?? AuthorizationService.Create(accountId, identifier);
 
-                order.Authorizations.Add(authz);
-            }
+                var orderAuthz = OrderAuthorizationRepository.Create(order.Id, authz.Id);
+                OrderAuthorizationRepository.Add(orderAuthz);
 
-            return OrderRepository.Add(order);
+                if (authz.Expires != null)
+                {
+                    listDate.Add(authz.Expires.Value);
+                }
+            }
+            // set min expiration date from authorizations
+            order.Expires = listDate.Min(o => o);
+
+            order.Identifier = ComputerIdentifier(@params.Identifiers.ToArray(), IDENTIFIER_HASH);
+            OrderRepository.Update(order);
+
+            return order;
         }
 
         public IOrder EnrollCertificate(int accountId, int orderId, FinalizeOrder @params)
@@ -64,8 +95,7 @@ namespace PeculiarVentures.ACME.Server.Services
             }
             #endregion
 
-            var order = GetById(accountId, orderId)
-                ?? throw new MalformedException("Access denied");
+            var order = GetById(accountId, orderId);
 
             order.Status = OrderStatus.Processing;
             OrderRepository.Update(order);
@@ -75,14 +105,9 @@ namespace PeculiarVentures.ACME.Server.Services
                 {
                     var requestRaw = Base64Url.Decode(@params.Csr);
                     var request = new Pkcs10CertificateRequest(requestRaw);
-                    var certificate = await Options.Value.EnrollmentHandler.Enroll(order, request);
+                    var certificate = await Options.EnrollmentHandler.Enroll(order, request);
 
-                    // Save cert
-                    var cert = CertificateRepository.Create(certificate);
-                    CertificateRepository.Add(cert);
-
-                    // Assign cert to order
-                    order.Certificate = cert;
+                    order.Certificate = OrderRepository.CreateCertificate(certificate);
                     OrderRepository.Update(order);
                 })
                 .ContinueWith(t =>
@@ -112,12 +137,18 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public IOrder GetById(int accountId, int id)
         {
-            var order = OrderRepository.GetById(id);
-            if (order.AccountId == accountId)
+            var order = OrderRepository.GetById(id) ?? throw new MalformedException("Order not found");
+            if (order.AccountId != accountId)
             {
-                return order;
+                throw new MalformedException("Access denied");
             }
-            return null;
+            return order;
+        }
+
+        public IOrder LastByIdentifiers(int accountId, Identifier[] identifiers)
+        {
+            var identifier = ComputerIdentifier(identifiers, IDENTIFIER_HASH);
+            return OrderRepository.LastByIdentifier(accountId, identifier);
         }
 
         public IOrder GetActual(int accountId, Identifier[] identifiers)
@@ -130,22 +161,23 @@ namespace PeculiarVentures.ACME.Server.Services
             #endregion
 
             // Gets order from repository
-            var order = OrderRepository.GetByIdentifiers(accountId, identifiers);
+            var order = LastByIdentifiers(accountId, identifiers);
             if (order == null || order.Status == OrderStatus.Invalid)
             {
                 return null;
             }
 
             // Checks expires
-            if (order.Expires != null && order.Expires < DateTime.Now)
+            if (order.Expires != null && order.Expires < DateTime.UtcNow)
             {
                 order.Status = OrderStatus.Invalid;
             }
             else
             {
                 // RefreshStatus authorizations
-                var authorizations = order.Authorizations;
-                authorizations.Select(auth => AuthorizationService.RefreshStatus(auth));
+                var authorizations = OrderAuthorizationRepository.GetByOrder(order.Id)
+                    .Select(o => AuthorizationService.GetById(accountId, o.AuthorizationId))
+                    .ToArray();
 
                 if (order.Status == OrderStatus.Pending)
                 {
@@ -168,22 +200,38 @@ namespace PeculiarVentures.ACME.Server.Services
             return order;
         }
 
-        public ICertificate[] GetCertificate(int accountId, string thumbprint)
+        public IOrder GetByCertificate(int accountId, X509Certificate2 x509)
         {
-            var cert = CertificateRepository.GetByThumbprint(thumbprint);
-            if (cert == null)
+            var cert = OrderRepository.CreateCertificate(x509);
+            return GetByCertificate(accountId, cert.Thumbprint);
+        }
+
+        public IOrder GetByCertificate(int accountId, string thumbprint)
+        {
+            var order = OrderRepository.GetByThumbprint(thumbprint);
+            if (order == null)
             {
                 throw new MalformedException("Certificate not found");
             }
+            if (order.AccountId != accountId)
+            {
+                throw new MalformedException("Access denied"); // TODO Check RFC Error
+            }
+            return order;
+        }
+
+        public ICertificate[] GetCertificate(int accountId, string thumbprint)
+        {
+            var order = GetByCertificate(accountId, thumbprint);
 
             // Build chain
             var chain = new X509Chain();
             chain.ChainPolicy.VerificationFlags = X509VerificationFlags.NoFlag;
-            foreach (var item in Options.Value.ExtraCertificateStorage)
+            foreach (var item in Options.ExtraCertificateStorage)
             {
                 chain.ChainPolicy.ExtraStore.Add(item);
             }
-            if (!chain.Build(new X509Certificate2(cert.RawData)))
+            if (!chain.Build(new X509Certificate2(order.Certificate.RawData)))
             {
                 // TODO Write WARN that cannot build a cert chain
             }
@@ -191,9 +239,35 @@ namespace PeculiarVentures.ACME.Server.Services
             var res = new List<ICertificate>();
             foreach (var item in chain.ChainElements)
             {
-                res.Add(CertificateRepository.Create(item.Certificate));
+                res.Add(OrderRepository.CreateCertificate(item.Certificate));
             }
             return res.ToArray();
+        }
+
+        public void RevokeCertificate(int accountId, RevokeCertificate @params)
+        {
+            var x509 = new X509Certificate2(Base64Url.Decode(@params.Certificate));
+            var order = GetByCertificate(accountId, x509);
+
+            RevokeCertificate(order, @params.Reason);
+        }
+
+        public void RevokeCertificate(JsonWebKey key, RevokeCertificate @params)
+        {
+            var x509 = new X509Certificate2(Base64Url.Decode(@params.Certificate));
+            throw new NotImplementedException($"Not implemented method {nameof(RevokeCertificate)}");
+            //var order = GetByCertificate(accountId, x509);
+
+            //RevokeCertificate(order, @params.Reason);
+        }
+
+        public void RevokeCertificate(IOrder order, RevokeReason reason)
+        {
+            Task.Run(async () => await Options.EnrollmentHandler.Revoke(order, reason))
+                .Wait();
+
+            order.Certificate.Revoked = true;
+            OrderRepository.Update(order);
         }
     }
 }

@@ -147,7 +147,7 @@ namespace PeculiarVentures.ACME.Client
                     message = $"Unexpected response status code [{response.StatusCode}].";
                 }
 
-                var ex = new AcmeException(message, error);
+                var ex = new AcmeException(error.Type, message, error);
 
                 _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 
@@ -207,7 +207,7 @@ namespace PeculiarVentures.ACME.Client
 
             if (string.IsNullOrEmpty(Location))
             {
-                var ex = new AcmeException("Account creation response does not include Location header.");
+                var ex = new AcmeException(ErrorType.IncorrectResponse, "Account creation response does not include Location header.");
 
                 _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 
@@ -231,7 +231,7 @@ namespace PeculiarVentures.ACME.Client
 
             if (string.IsNullOrEmpty(Location))
             {
-                var ex = new AcmeException("Account creation response does not include Location header.");
+                var ex = new AcmeException(ErrorType.IncorrectResponse, "Account creation response does not include Location header.");
 
                 _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 

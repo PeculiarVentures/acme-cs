@@ -14,16 +14,16 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         OrderStatus Status { get; set; }
 
         /// <summary>
+        /// Computed hash of a list of identifiers for quick searching. SHA256(Sort(LowCase(identifiers)))
+        /// </summary>
+        string Identifier { get; set; }
+
+        /// <summary>
         /// The timestamp after which the server will consider this order invalid,
         /// encoded in the format specified in [RFC3339].  This field is REQUIRED
         /// for objects with "pending" or "valid" in the status field.
         /// </summary>
         DateTime? Expires { get; set; }
-
-        /// <summary>
-        /// An array of identifier objects that the order pertains to
-        /// </summary>
-        ICollection<IIdentifier> Identifiers { get; set; }
 
         /// <summary>
         /// The requested value of the notBefore field in the certificate.
@@ -39,11 +39,6 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// The error that occurred while processing the order, if any.
         /// </summary>
         IError Error { get; set; }
-
-        /// <summary>
-        /// An array of authorization objects
-        /// </summary>
-        ICollection<IAuthorization> Authorizations { get; set; }
 
         /// <summary>
         /// Enrolled certificate id

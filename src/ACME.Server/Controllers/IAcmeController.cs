@@ -5,6 +5,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
 {
     public interface IAcmeController
     {
+        ServerOptions Options { get; }
         AcmeResponse CreateAccount(AcmeRequest request);
         AcmeResponse CreateOrder(AcmeRequest request);
         AcmeResponse GetDirectory();
@@ -14,6 +15,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         AcmeResponse PostAuthorization(AcmeRequest acmeRequest, int authzId);
         AcmeResponse PostChallenge(AcmeRequest request, int challengeId);
         AcmeResponse FinalizeOrder(AcmeRequest request, int orderId);
-        AcmeResponse GetCertificate(AcmeRequest acmeRequest, string id);
+        AcmeResponse GetCertificate(AcmeRequest request, string id);
+        AcmeResponse RevokeCertificate(AcmeRequest request);
     }
 }

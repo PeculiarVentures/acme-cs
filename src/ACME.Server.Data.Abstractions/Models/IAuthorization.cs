@@ -22,11 +22,6 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         DateTime? Expires { get; set; }
 
         /// <summary>
-        /// An array of challenges
-        /// </summary>
-        ICollection<IChallenge> Challenges { get; set; }
-
-        /// <summary>
         /// This field MUST be present and true
         /// for authorizations created as a result of a newOrder request
         /// containing a DNS identifier with a value that was a wildcard

@@ -1,11 +1,12 @@
 ﻿using System;
+using PeculiarVentures.ACME.Protocol;
+
 namespace PeculiarVentures.ACME
 {
     public class BadNonceException : AcmeException
     {
-        public BadNonceException() : base("Bad nonce")
+        public BadNonceException() : base(ErrorType.BadNonce, "Bad nonce")
         {
-            Type = Protocol.ErrorType.BadNonce;
         }
     }
 }

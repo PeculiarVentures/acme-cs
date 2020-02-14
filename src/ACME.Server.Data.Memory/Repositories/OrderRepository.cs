@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 
@@ -10,31 +8,33 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 {
     public class OrderRepository : BaseRepository<IOrder>, IOrderRepository
     {
+        public OrderRepository()
+        {
+        }
+
         public override IOrder Create()
         {
             return new Models.Order();
         }
 
-        public IOrder GetByIdentifiers(int accountId, Identifier[] identifiers)
+        public ICertificate CreateCertificate(X509Certificate2 cert)
         {
-            if (identifiers is null)
+            return new Models.Certificate
             {
-                throw new ArgumentNullException(nameof(identifiers));
-            }
+                RawData = cert.RawData,
+                Thumbprint = cert.Thumbprint,
+            };
+        }
 
-            var oderedIdentifiers = identifiers
-                .OrderBy(o => o.Type)
-                .OrderBy(o => o.Value)
-                .ToArray();
+        public IOrder LastByIdentifier(int accountId, string identifier)
+        {
+            return Items.LastOrDefault(o => o.Identifier == identifier && o.AccountId == accountId);
+        }
 
+        public IOrder GetByThumbprint(string thumbprint)
+        {
             return Items
-                .Where(o => o.AccountId == accountId)
-                .Where(o => o.Authorizations
-                    .Select(a => new Identifier(a.Identifier.Type, a.Identifier.Value))
-                    .OrderBy(a => a.Type)
-                    .OrderBy(a => a.Value)
-                    .SequenceEqual(oderedIdentifiers))
-                .LastOrDefault();
+                .FirstOrDefault(o => o.Certificate != null && o.Certificate.Thumbprint.Equals(thumbprint, StringComparison.CurrentCultureIgnoreCase));
         }
     }
 }

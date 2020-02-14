@@ -5,9 +5,8 @@ using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 
 namespace PeculiarVentures.ACME.Server.Data.Memory.Models
 {
-    public class Authorization : IAuthorization
+    public class Authorization : BaseObject, IAuthorization
     {
-        public int Id { get; set; }
         public int AccountId { get; set; }
         public IIdentifier Identifier { get; set; } = new Identifier();
         public AuthorizationStatus Status { get; set; }

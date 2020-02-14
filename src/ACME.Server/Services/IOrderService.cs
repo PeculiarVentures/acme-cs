@@ -2,6 +2,7 @@
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Protocol.Messages;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
+using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
@@ -12,5 +13,7 @@ namespace PeculiarVentures.ACME.Server.Services
         IOrder GetActual(int accountId, Identifier[] identifiers);
         IOrder EnrollCertificate(int accountId, int orderId, FinalizeOrder @params);
         ICertificate[] GetCertificate(int accountId, string thumbprint);
+        void RevokeCertificate(int accountId, RevokeCertificate @params);
+        void RevokeCertificate(JsonWebKey key, RevokeCertificate @params);
     }
 }

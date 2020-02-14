@@ -2,6 +2,7 @@
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using PeculiarVentures.ACME.Cryptography;
+using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Server;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 
@@ -19,6 +20,11 @@ namespace AspNetCore.Server
         }
 
         public Task Revoke(X509Certificate2 certificate)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Revoke(IOrder order, RevokeReason reason)
         {
             throw new NotImplementedException();
         }

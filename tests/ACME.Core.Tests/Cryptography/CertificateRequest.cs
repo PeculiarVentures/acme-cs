@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Xunit;
@@ -24,8 +25,8 @@ namespace PeculiarVentures.ACME.Cryptography
             byte[] rawData = Convert.FromBase64String(PKCS10_BASE64);
             var req = new Pkcs10CertificateRequest(rawData);
             Assert.True(req.Verify());
-            Assert.Equal(0,req.Version);
-            Assert.Equal("",req.Subject);
+            Assert.Equal(0, req.Version);
+            Assert.Equal("", req.Subject);
             Assert.Equal("1.2.840.113549.1.1.1", req.PublicKey.Oid.Value.ToString());
             Assert.Equal(6, req.Extensions.Count);
         }
@@ -133,7 +134,7 @@ namespace PeculiarVentures.ACME.Cryptography
             var ChallengePasswordAttribute = new X509ChallengePasswordAttribute("password");
             var EnrollmentNameValuePairAttribute = new X509EnrollmentNameValuePairAttribute(new X509EnrollmentNameValuePairParams()
             {
-                CertificateUsage = (new List<Oid>(){ new Oid("1.2.3.4"), new Oid("2.3.4") }).ToArray()
+                CertificateUsage = (new List<Oid>() { new Oid("1.2.3.4"), new Oid("2.3.4") }).ToArray()
             });
             var EnrollmentNameValuePairAttribute2 = new X509EnrollmentNameValuePairAttribute(new X509EnrollmentNameValuePairParams()
             {

@@ -30,7 +30,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             ChallengeService = challengeService ?? throw new ArgumentNullException(nameof(challengeService));
             AuthorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));
             ConverterService = converterService ?? throw new ArgumentNullException(nameof(converterService));
-            Options = options ?? throw new ArgumentNullException(nameof(options));
+            Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
         public IDirectoryService DirectoryService { get; }
@@ -40,7 +40,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         public IChallengeService ChallengeService { get; }
         public IAuthorizationService AuthorizationService { get; }
         public IConverterService ConverterService { get; }
-        public IOptions<ServerOptions> Options { get; }
+        public ServerOptions Options { get; }
 
         public AcmeResponse CreateResponse()
         {
@@ -57,7 +57,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         /// <param name="action">Action</param>
         /// <param name="request">ACME request. If presents wrapper validates JWS</param>
         /// <returns></returns>
-        public AcmeResponse WrapAction(Action<AcmeResponse> action, AcmeRequest request = null)
+        public AcmeResponse WrapAction(Action<AcmeResponse> action, AcmeRequest request = null, bool UseJwk = false)
         {
             var response = CreateResponse();
 
@@ -68,7 +68,70 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 {
                     if (request.Method == "POST")
                     {
-                        // TODO Check JWS
+                        #region Check JWS
+                        IAccount account = null;
+
+                        // Parse JWT
+                        var token = request.Token;
+                        try
+                        {
+                            if (token == null)
+                            {
+                                throw new Exception("JSON Web Token is empty");
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            throw new AcmeException(ErrorType.Unauthorized, "Cannot parse JSON Web Token", System.Net.HttpStatusCode.Unauthorized, e);
+                        }
+
+                        if (request.Url == null)
+                        {
+                            throw new UnauthorizedException("The JWS header MUST have 'url' field");
+                        }
+
+                        if (UseJwk)
+                        {
+                            if (request.Key == null)
+                            {
+                                throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'jwk' field", System.Net.HttpStatusCode.BadRequest);
+                            }
+                            if (!token.Verify())
+                            {
+                                throw new AcmeException(ErrorType.Unauthorized, "JWS signature is invalid", System.Net.HttpStatusCode.Unauthorized);
+                            }
+
+                            account = AccountService.FindByPublicKey(request.Key);
+                            // If a server receives a POST or POST-as-GET from a deactivated account, it MUST return an error response with status
+                            // code 401(Unauthorized) and type "urn:ietf:params:acme:error:unauthorized"
+                            if (account != null && account.Status != AccountStatus.Valid)
+                            {
+                                throw new UnauthorizedException($"Account is not valid. Status is '{account.Status}'");
+                            }
+                        }
+                        else
+                        {
+                            if (request.KeyId == null)
+                            {
+                                throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'kid' field", System.Net.HttpStatusCode.BadRequest);
+                            }
+
+                            account = AccountService.GetById(GetIdFromLink(request.KeyId));
+
+                            if (!token.Verify(account.Key.GetPublicKey()))
+                            {
+                                throw new AcmeException(ErrorType.Unauthorized, "JWS signature is invalid", System.Net.HttpStatusCode.Unauthorized);
+                            }
+
+                            // Once an account is deactivated, the server MUST NOT accept further
+                            // requests authorized by that account's key
+                            // https://tools.ietf.org/html/rfc8555#section-7.3.6
+                            if (account.Status != AccountStatus.Valid)
+                            {
+                                throw new UnauthorizedException($"Account is not valid. Status is '{account.Status}'");
+                            }
+                        }
+                        #endregion
 
                         #region Check Nonce
 
@@ -83,6 +146,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 // Invoke action
                 action.Invoke(response);
             }
+
             catch (Exception e)
             {
                 response.StatusCode = 500; // Internal Server Error
@@ -143,10 +207,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
         protected IAccount GetAccount(string kid)
         {
             var account = AccountService.GetById(GetIdFromLink(kid));
-            if (account == null)
-            {
-                throw new AccountDoesNotExistException();
-            }
 
             if (account.Status == AccountStatus.Deactivated)
             {
@@ -165,10 +225,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
                 if (@params.OnlyReturnExisting == true)
                 {
-                    if (account == null)
-                    {
-                        throw new AccountDoesNotExistException();
-                    }
                     response.Content = ConverterService.ToAccount(account);
                     response.StatusCode = 200; // Ok
                 }
@@ -191,7 +247,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
                 // Set headers
                 response.Location = $"{account.Id}";
-            }, request);
+            }, request, true);
         }
 
         public AcmeResponse PostAccount(AcmeRequest request)
@@ -242,7 +298,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
             {
                 var reqProtected = request.Token.GetProtected();
 
-                // TODO need check this checking
                 // Validate the POST request belongs to a currently active account, as described in Section 6.
                 var account = GetAccount(reqProtected.KeyID);
                 var jws = new JsonWebSignature();
@@ -287,8 +342,8 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 }
 
                 // Check that the "oldKey" field of the keyChange object is the same as the account key for the account in question.
-                var testAccount = AccountService.FindByPublicKey(param.Key);
-                if (testAccount == null || testAccount.Id != account.Id)
+                var testAccount = AccountService.GetByPublicKey(param.Key);
+                if (testAccount.Id != account.Id)
                 {
                     throw new MalformedException("The 'oldKey' is the not same as the account key");
                 }
@@ -330,9 +385,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             return WrapAction((response) =>
             {
                 var account = GetAccount(request.KeyId);
-                var order = OrderService.GetById(account.Id, orderId)
-                    ?? throw new MalformedException("Order not found");
-
+                var order = OrderService.GetById(account.Id, orderId);
                 response.Content = ConverterService.ToOrder(order);
             }, request);
         }
@@ -363,16 +416,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 var account = GetAccount(request.KeyId);
 
                 var challenge = ChallengeService.GetById(challengeId);
-                if (challenge == null)
-                {
-                    // TODO Check RFC
-                    throw new MalformedException("Challenge not found");
-                }
-                if (challenge.AccountId != account.Id)
-                {
-                    // TODO Check RFC
-                    throw new MalformedException("Access denied");
-                }
+                _ = AuthorizationService.GetById(account.Id, challenge.AuthorizationId);
 
                 if (request.Token.IsPayloadEmptyObject)
                 {
@@ -416,7 +460,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 var account = GetAccount(request.KeyId);
                 var certs = OrderService.GetCertificate(account.Id, thumbprint);
 
-                switch (Options.Value.DownloadCertificateFormat)
+                switch (Options.DownloadCertificateFormat)
                 {
                     case DownloadCertificateFormat.PemCertificateChain:
                         {
@@ -437,6 +481,23 @@ namespace PeculiarVentures.ACME.Server.Controllers
                             response.Content = new MediaTypeContent("application/pkcs7-mime", x509Collection.Export(X509ContentType.Pkcs7));
                         }
                         break;
+                }
+            }, request);
+        }
+
+        public AcmeResponse RevokeCertificate(AcmeRequest request)
+        {
+            return WrapAction((response) =>
+            {
+                var @params = request.GetContent<RevokeCertificate>();
+                if (request.KeyId != null)
+                {
+                    var account = GetAccount(request.KeyId);
+                    OrderService.RevokeCertificate(account.Id, @params);
+                }
+                else
+                {
+                    OrderService.RevokeCertificate(request.Key, @params);
                 }
             }, request);
         }

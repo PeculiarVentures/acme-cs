@@ -14,10 +14,10 @@ namespace PeculiarVentures.ACME.Protocol
         [JsonProperty("detail")]
         public string Detail { get; set; }
 
-#if DEBUG
+        //#if DEBUG
         [JsonProperty("stack")]
         public string Stack { get; set; }
-#endif
+        //#endif
 
         [JsonProperty("subproblems")]
         public Error[] SubProblems { get; set; }
@@ -29,33 +29,41 @@ namespace PeculiarVentures.ACME.Protocol
 
         public static implicit operator Error(Exception exception)
         {
-            return new Error
+            var error = new Error
             {
                 Type = ErrorType.ServerInternal,
                 Detail = exception.Message,
-#if DEBUG
+                //#if DEBUG
                 Stack = exception.StackTrace,
-#endif
+                //#endif
             };
+            if (exception.InnerException != null)
+            {
+                error.SubProblems = new Error[] { exception.InnerException };
+            }
+            return error;
         }
 
         public static implicit operator AcmeException(Error error)
         {
-            return new AcmeException($"ACME error '{error.Type}'.{(error.Detail != null ? " " + error.Detail : "")}")
-            {
-                Type = error.Type,
-            };
+            return new AcmeException(error.Type, $"ACME error '{error.Type}'.{(error.Detail != null ? " " + error.Detail : "")}") { };
         }
         public static implicit operator Error(AcmeException exception)
         {
-            return new Error
+            var error = new Error
             {
                 Type = exception.Type,
                 Detail = exception.StackTrace,
-#if DEBUG
+                //#if DEBUG
                 Stack = exception.StackTrace,
-#endif
+                //#endif
             };
+
+            if (exception.InnerException != null)
+            {
+                error.SubProblems = new Error[] { exception.InnerException };
+            }
+            return error;
         }
     }
 }

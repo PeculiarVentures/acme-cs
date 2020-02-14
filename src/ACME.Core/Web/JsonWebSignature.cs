@@ -159,7 +159,35 @@ namespace PeculiarVentures.ACME.Web
             throw new ArgumentException($"Unsupported key type: {key.GetType()}");
         }
 
+        public bool Verify(byte[] key)
+        {
+            byte[] data = ToByteSign();
 
+            var @protected = GetProtected();
+            KeyedHashAlgorithm keyHash = null;
+            switch (@protected.Algorithm)
+            {
+                case AlgorithmsEnum.HS256:
+                    keyHash = HMAC.Create("HMACSHA256");
+                    break;
+                case AlgorithmsEnum.HS384:
+                    keyHash = HMAC.Create("HMACSHA384");
+                    break;
+                case AlgorithmsEnum.HS512:
+                    keyHash = HMAC.Create("HMACSHA512");
+                    break;
+                case AlgorithmsEnum.HS1:
+                    keyHash = HMAC.Create("HMACSHA1");
+                    break;
+                default:
+                    throw new CryptographicException($"Unsupported algorithm: {@protected.Algorithm}");
+            }
+            keyHash.Key = key;
+
+            byte[] signedData = keyHash.ComputeHash(data);
+
+            return Signature == Base64Url.Encode(signedData);
+        }
 
         public bool Verify(SymmetricAlgorithm key)
         {

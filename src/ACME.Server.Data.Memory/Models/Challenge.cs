@@ -4,15 +4,13 @@ using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 
 namespace PeculiarVentures.ACME.Server.Data.Memory.Models
 {
-    public class Challenge : IChallenge
+    public class Challenge : BaseObject, IChallenge
     {
         public string Type { get; set; }
         public ChallengeStatus Status { get; set; }
         public DateTime? Validated { get; set; }
         public IError Error { get; set; }
-        public int Id { get; set; }
         public string Token { get; set; }
-        public int AccountId { get; set; }
-        public IIdentifier Identifier { get; set; }
+        public int AuthorizationId { get; set; }
     }
 }

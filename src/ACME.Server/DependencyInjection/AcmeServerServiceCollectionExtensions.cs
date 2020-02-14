@@ -12,14 +12,14 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return collection
                 .Configure(options)
-                .AddScoped<IConverterService, ConverterService>()
-                .AddScoped<IAcmeController, AcmeController>()
-                .AddScoped<IDirectoryService, DirectoryService>()
-                .AddScoped<INonceService, NonceService>()
-                .AddScoped<IOrderService, OrderService>()
-                .AddScoped<IAuthorizationService, AuthorizationService>()
-                .AddScoped<IChallengeService, ChallengeService>()
-                .AddScoped<IAccountService, AccountService>();
+                .AddTransient<IConverterService, ConverterService>()
+                .AddTransient<IAcmeController, AcmeController>()
+                .AddTransient<IDirectoryService, DirectoryService>()
+                .AddTransient<INonceService, NonceService>()
+                .AddTransient<IOrderService, OrderService>()
+                .AddTransient<IAuthorizationService, AuthorizationService>()
+                .AddTransient<IChallengeService, ChallengeService>()
+                .AddTransient<IAccountService, AccountService>();
 
         }
     }
