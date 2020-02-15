@@ -70,7 +70,5 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <exception cref="MalformedException"/>
         /// <exception cref="ArgumentNullException"/>
         IAccount ChangeKey(int accountId, JsonWebKey key);
-
-        IExternalAccount CreateExternalAccount(object data);
     }
 }

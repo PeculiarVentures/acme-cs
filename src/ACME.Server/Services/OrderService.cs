@@ -16,7 +16,7 @@ using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
-    public class OrderService : IOrderService
+    public class OrderService : BaseService, IOrderService
     {
         private const string IDENTIFIER_HASH = "SHA256";
 
@@ -25,17 +25,19 @@ namespace PeculiarVentures.ACME.Server.Services
             IAuthorizationService authorizationService,
             IOrderAuthorizationRepository orderAuthorizationRepository,
             IOptions<ServerOptions> options)
+            : base(options)
         {
-            OrderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
-            AuthorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));
-            OrderAuthorizationRepository = orderAuthorizationRepository ?? throw new ArgumentNullException(nameof(orderAuthorizationRepository));
-            Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+            OrderRepository = orderRepository
+                ?? throw new ArgumentNullException(nameof(orderRepository));
+            AuthorizationService = authorizationService
+                ?? throw new ArgumentNullException(nameof(authorizationService));
+            OrderAuthorizationRepository = orderAuthorizationRepository
+                ?? throw new ArgumentNullException(nameof(orderAuthorizationRepository));
         }
 
         public IOrderRepository OrderRepository { get; }
         public IAuthorizationService AuthorizationService { get; }
         public IOrderAuthorizationRepository OrderAuthorizationRepository { get; }
-        public ServerOptions Options { get; }
 
         public string ComputerIdentifier(Identifier[] identifiers, string hashAlgorithm)
         {

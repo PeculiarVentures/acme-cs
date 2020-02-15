@@ -1,25 +1,26 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Extensions.Options;
-using PeculiarVentures.ACME.Helpers;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
-    public class AuthorizationService : IAuthorizationService
+    public class AuthorizationService : BaseService, IAuthorizationService
     {
-        public AuthorizationService(IAuthorizationRepository authorizationRepository, IChallengeService challengeService, IOptions<ServerOptions> options)
+        public AuthorizationService(
+            IAuthorizationRepository authorizationRepository,
+            IChallengeService challengeService,
+            IOptions<ServerOptions> options)
+            : base(options)
         {
             AuthorizationRepository = authorizationRepository ?? throw new ArgumentNullException(nameof(authorizationRepository));
             ChallengeService = challengeService ?? throw new ArgumentNullException(nameof(challengeService));
-            Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
         public IAuthorizationRepository AuthorizationRepository { get; }
         public IChallengeService ChallengeService { get; }
-        public ServerOptions Options { get; }
 
         public virtual IAuthorization Create(int accountId, Identifier identifier)
         {

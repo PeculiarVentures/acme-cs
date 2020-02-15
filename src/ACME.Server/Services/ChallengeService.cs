@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Helpers;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
@@ -9,23 +10,21 @@ using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
-    public class ChallengeService : IChallengeService
+    public class ChallengeService : BaseService, IChallengeService
     {
 
         public ChallengeService(IChallengeRepository challengeRepository,
-                                IAccountService accountService,
-                                IAuthorizationRepository authorizationRepository)
+                                IAuthorizationRepository authorizationRepository,
+                                IOptions<ServerOptions> options)
+            : base(options)
         {
             ChallengeRepository = challengeRepository
                 ?? throw new ArgumentNullException(nameof(challengeRepository));
-            AccountService = accountService
-                ?? throw new ArgumentNullException(nameof(accountService));
             AuthorizationRepository = authorizationRepository
                 ?? throw new ArgumentNullException(nameof(authorizationRepository));
         }
 
         private IChallengeRepository ChallengeRepository { get; }
-        private IAccountService AccountService { get; }
         private IAuthorizationRepository AuthorizationRepository { get; }
 
         public IChallenge Create(int authzId, string type)

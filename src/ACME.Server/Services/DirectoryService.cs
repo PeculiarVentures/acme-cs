@@ -1,19 +1,15 @@
 ﻿using System;
 using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Protocol;
-using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
-    public class DirectoryService : IDirectoryService
+    public class DirectoryService : BaseService, IDirectoryService
     {
         public DirectoryService(IOptions<ServerOptions> options)
+            : base(options)
         {
-            Options = options?.Value
-                ?? throw new ArgumentNullException(nameof(options));
         }
-
-        public ServerOptions Options { get; }
 
         public Directory GetDirectory()
         {

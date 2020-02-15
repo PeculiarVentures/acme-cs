@@ -1,18 +1,21 @@
 ﻿using System;
 using System.Linq;
+using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
-    public class ConverterService : IConverterService
+    public class ConverterService : BaseService, IConverterService
     {
         public ConverterService(
             IAuthorizationRepository authorizationRepository,
             IChallengeRepository challengeRepository,
             IOrderAuthorizationRepository orderAuthorizationRepository,
-            IExternalAccountRepository externalAccountRepository)
+            IExternalAccountRepository externalAccountRepository,
+            IOptions<ServerOptions> options)
+            : base(options)
         {
             AuthorizationRepository = authorizationRepository
                 ?? throw new ArgumentNullException(nameof(authorizationRepository));
@@ -20,7 +23,7 @@ namespace PeculiarVentures.ACME.Server.Services
                 ?? throw new ArgumentNullException(nameof(challengeRepository));
             OrderAuthorizationRepository = orderAuthorizationRepository
                 ?? throw new ArgumentNullException(nameof(orderAuthorizationRepository));
-            ExternalAccountRepository = externalAccountRepository 
+            ExternalAccountRepository = externalAccountRepository
                 ?? throw new ArgumentNullException(nameof(externalAccountRepository));
         }
 
@@ -40,7 +43,7 @@ namespace PeculiarVentures.ACME.Server.Services
                 Key = data.Key,
                 CreatedAt = data.CreatedAt,
             };
-            if(ExternalAccountRepository != null && data.ExternalAccountId != null)
+            if (ExternalAccountRepository != null && data.ExternalAccountId != null)
             {
                 account.ExternalAccountBinding = ExternalAccountRepository.GetById(account.Id).Account;
             }
@@ -94,7 +97,7 @@ namespace PeculiarVentures.ACME.Server.Services
             var authzs = OrderAuthorizationRepository.GetByOrder(data.Id)
                 .Select(o => AuthorizationRepository.GetById(o.AuthorizationId))
                 .ToArray();
-            
+
             return new Order
             {
                 Id = data.Id,

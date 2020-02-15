@@ -11,19 +11,26 @@ namespace AspNetCore.Server.Controllers
     [Route("admin")]
     public class AdminController : Controller
     {
-        public AdminController(IAccountService accountService)
+        public AdminController(IExternalAccountService externalAccountService)
         {
-            AccountService = accountService
-                ?? throw new ArgumentNullException(nameof(accountService));
+            ExternalAccountService = externalAccountService
+                ?? throw new ArgumentNullException(nameof(externalAccountService));
         }
 
-        public IAccountService AccountService { get; }
+        public IExternalAccountService ExternalAccountService { get; }
 
         [HttpGet]
-        [Route("account")]
+        [Route("account/create")]
         public IExternalAccount CreateExternalAccount([FromQuery] string id)
         {
-            return AccountService.CreateExternalAccount(id);
+            return ExternalAccountService.Create(id);
+        }
+
+        [HttpGet]
+        [Route("account/{id:int}")]
+        public IExternalAccount GetAccount(int id)
+        {
+            return ExternalAccountService.GetById(id);
         }
     }
 }

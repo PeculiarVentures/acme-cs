@@ -19,7 +19,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IOrderService, OrderService>()
                 .AddTransient<IAuthorizationService, AuthorizationService>()
                 .AddTransient<IChallengeService, ChallengeService>()
-                .AddTransient<IAccountService, AccountService>();
+                .AddTransient<IAccountService, AccountService>()
+                .AddTransient<IExternalAccountService, ExternalAccountService>();
 
         }
     }

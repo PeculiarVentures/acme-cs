@@ -43,7 +43,7 @@ namespace AspNetCore.Server
                 o.ExtraCertificateStorage = new X509Certificate2Collection(new X509Certificate2(Convert.FromBase64String(RootCA)));
                 o.ExternalAccountOptions = new ExternalAccountOptions
                 {
-                    Type = ExternalAccountType.None,
+                    Type = ExternalAccountType.Required,
                 };
             });
         }

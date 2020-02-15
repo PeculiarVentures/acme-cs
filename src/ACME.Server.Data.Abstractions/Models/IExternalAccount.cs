@@ -1,5 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using PeculiarVentures.ACME.Protocol;
 
 namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
 {
@@ -10,5 +12,8 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         DateTime? Expires { get; set; }
 
         object Account { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        ExternalAccountStatus Status { get; set; }
     }
 }

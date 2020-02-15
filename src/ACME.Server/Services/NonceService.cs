@@ -1,16 +1,21 @@
 ﻿using System;
+using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
-    public class NonceService : INonceService
+    public class NonceService : BaseService, INonceService
     {
         public INonceRepository NonceRepository { get; }
 
-        public NonceService(INonceRepository nonceRepository)
+        public NonceService(
+            INonceRepository nonceRepository,
+            IOptions<ServerOptions> options)
+            : base(options)
         {
-            NonceRepository = nonceRepository ?? throw new ArgumentNullException(nameof(nonceRepository));
+            NonceRepository = nonceRepository
+                ?? throw new ArgumentNullException(nameof(nonceRepository));
         }
 
         public string Create()
