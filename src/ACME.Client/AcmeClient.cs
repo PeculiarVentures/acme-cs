@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using PeculiarVentures.ACME.Helpers;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Web;
 
@@ -26,7 +27,7 @@ namespace PeculiarVentures.ACME.Client
 
         public string Location { get; set; }
 
-        private AcmeClient(HttpClient http, AsymmetricAlgorithm key, ILogger logger = null)
+        protected AcmeClient(HttpClient http, AsymmetricAlgorithm key, ILogger logger = null)
         {
             Key = key;
             _http = http;
@@ -197,7 +198,9 @@ namespace PeculiarVentures.ACME.Client
             await Request(Directory.NewNonce, HttpMethod.Head);
         }
 
-        /// <summary></summary>
+        /// <summary>
+        /// Account create.
+        /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3"/>
         public async Task<Account> AccountCreateAsync(Protocol.Messages.NewAccount account)
         {
@@ -215,6 +218,33 @@ namespace PeculiarVentures.ACME.Client
             }
 
             return await Deserialize<Account>(response);
+        }
+
+        /// <summary>
+        /// Account create with external account binding.
+        /// </summary>
+        /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.5"/>
+        public async Task<Account> AccountCreateAsync(Protocol.Messages.NewAccount account, string kid, string keyMac)
+        {
+            var jws = new JsonWebSignature();
+
+            jws.SetProtected(new JsonWebSignatureProtected
+            {
+                Algorithm = AlgorithmsEnum.HS256,
+                KeyID = kid,
+                Url = Directory.NewAccount,
+            });
+
+            jws.SetPayload(new JsonWebKey(Key));
+
+            var key = HMAC.Create("HMACSHA256");
+            key.Key = Base64Url.Decode(keyMac);
+
+            jws.Sign(key);
+
+            account.ExternalAccountBinding = jws;
+
+            return await AccountCreateAsync(account);
         }
 
         /// <summary>
