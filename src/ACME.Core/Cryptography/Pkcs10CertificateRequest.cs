@@ -414,11 +414,11 @@ namespace PeculiarVentures.ACME.Cryptography
             {
                 if (param.PrivateKey == null || param.PublicKey == null)
                 {
-                    throw new ArgumentNullException("Public or Privet key is null");
+                    throw new ArgumentNullException("Public or Private key is null");
                 }
                 var publicKey = PublicKeyFactory.CreateKey(param.PublicKey);
-                var privetKey = PrivateKeyFactory.CreateKey(param.PrivateKey);
-                keyPair = new AsymmetricCipherKeyPair(publicKey, privetKey);
+                var privateKey = PrivateKeyFactory.CreateKey(param.PrivateKey);
+                keyPair = new AsymmetricCipherKeyPair(publicKey, privateKey);
             }
 
             //Attributes
