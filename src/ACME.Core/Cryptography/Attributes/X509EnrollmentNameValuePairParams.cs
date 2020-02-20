@@ -19,18 +19,6 @@ namespace PeculiarVentures.ACME.Cryptography
             set;
         }
 
-        public byte[] PublicKey
-        {
-            get;
-            set;
-        }
-
-        public byte[] PrivateKey
-        {
-            get;
-            set;
-        }
-
         public Attribute[] Attributes
         {
             get;

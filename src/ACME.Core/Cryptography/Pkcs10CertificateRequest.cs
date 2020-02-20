@@ -5,8 +5,6 @@ using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Pkcs;
 using System.Linq;
 using Org.BouncyCastle.Asn1;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Security;
 
 namespace PeculiarVentures.ACME.Cryptography
@@ -29,7 +27,7 @@ namespace PeculiarVentures.ACME.Cryptography
         #endregion
 
         #region Constructors
-        public Pkcs10CertificateRequest(CertificateRequestParams param) => Generate(param);
+        public Pkcs10CertificateRequest(CertificateRequestParams param, RSA key) => Generate(param, key);
         public Pkcs10CertificateRequest(byte[] rawData) => Import(rawData);
         #endregion
 
@@ -398,28 +396,14 @@ namespace PeculiarVentures.ACME.Cryptography
         /// Generates the certificate request by params
         /// </summary>
         /// <param name="param">Certificate request params</param>
-        public void Generate(CertificateRequestParams param)
+        public void Generate(CertificateRequestParams param, RSA key)
         {
             //Requested Certificate Name
             X509Name name = string.IsNullOrEmpty(param.CommonName) ? X509Name.GetInstance(new DerSequence()) : new X509Name(param.CommonName);
 
             string signatureAlgorithm = param.SignatureAlgorithm.ToString();
 
-            //Key generation 2048bit
-            RsaKeyPairGenerator rkpg = new RsaKeyPairGenerator();
-            rkpg.Init(new KeyGenerationParameters(new SecureRandom(), 2048));
-            AsymmetricCipherKeyPair keyPair = rkpg.GenerateKeyPair();
-
-            if (param.PrivateKey != null || param.PublicKey != null)
-            {
-                if (param.PrivateKey == null || param.PublicKey == null)
-                {
-                    throw new ArgumentNullException("Public or Private key is null");
-                }
-                var publicKey = PublicKeyFactory.CreateKey(param.PublicKey);
-                var privateKey = PrivateKeyFactory.CreateKey(param.PrivateKey);
-                keyPair = new AsymmetricCipherKeyPair(publicKey, privateKey);
-            }
+            var keyPair = DotNetUtilities.GetRsaKeyPair(key);
 
             //Attributes
             Asn1Set attr = null;

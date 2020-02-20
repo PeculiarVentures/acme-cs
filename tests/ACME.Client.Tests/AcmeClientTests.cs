@@ -270,7 +270,9 @@ namespace PeculiarVentures.ACME.Client
                         Attributes = new Cryptography.Attribute[] { },
                         CommonName = $"CN={_domain}",
                     };
-                    var csr = new Pkcs10CertificateRequest(param);
+                    var key = RSA.Create();
+                    key.ExportParameters(true);
+                    var csr = new Pkcs10CertificateRequest(param, key);
                     var csrDer = Base64Url.Encode(csr.Export());
 
                     var orderFinal = await client.OrderFinalizeAsync(order.Finalize, csrDer);
@@ -320,7 +322,9 @@ namespace PeculiarVentures.ACME.Client
                         Attributes = new Cryptography.Attribute[] { },
                         CommonName = $"CN={_domain}",
                     };
-                    var csr = new Pkcs10CertificateRequest(param);
+                    var key = RSA.Create();
+                    key.ExportParameters(true);
+                    var csr = new Pkcs10CertificateRequest(param, key);
                     var csrDerBytes = csr.Export();
 
                     var orderFinal = await client.OrderFinalizeAsync(order.Finalize, Base64Url.Encode(csrDerBytes));

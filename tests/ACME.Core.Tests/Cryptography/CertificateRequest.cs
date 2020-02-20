@@ -145,7 +145,9 @@ namespace PeculiarVentures.ACME.Cryptography
             {
                 Attributes = new Attribute[] { ChallengePasswordAttribute, EnrollmentNameValuePairAttribute, EnrollmentNameValuePairAttribute2 }
             };
-            var req = new Pkcs10CertificateRequest(param);
+            var key = RSA.Create();
+            key.ExportParameters(true);
+            var req = new Pkcs10CertificateRequest(param, key);
             Assert.True(req.Verify());
             var lapo = Convert.ToBase64String(req.RawData);
         }
@@ -153,8 +155,10 @@ namespace PeculiarVentures.ACME.Cryptography
         [Fact]
         public void Create_without_params()
         {
+            var key = RSA.Create();
+            key.ExportParameters(true);
             var param = new CertificateRequestParams();
-            var req = new Pkcs10CertificateRequest(param);
+            var req = new Pkcs10CertificateRequest(param, key);
             Assert.True(req.Verify());
         }
 
