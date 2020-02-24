@@ -1,14 +1,14 @@
 ﻿using System;
 using System.IO;
-using System.Net;
+using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PeculiarVentures.ACME.Helpers;
-using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Web;
+using PeculiarVentures.ACME.Web.Http;
 
 namespace PeculiarVentures.ACME.Client
 {
@@ -32,6 +32,8 @@ namespace PeculiarVentures.ACME.Client
             Key = key;
             _http = http;
             _logger = logger;
+
+            _logger?.LogInformation($"{nameof(AcmeClient)} is starting.");
         }
 
         public static async Task<AcmeClient> CreateAsync(Uri rootUrl, AsymmetricAlgorithm key, ILogger logger = null)
@@ -43,24 +45,18 @@ namespace PeculiarVentures.ACME.Client
         {
             var client = new AcmeClient(http, key, logger);
 
-            client._logger?.LogInformation($"{nameof(AcmeClient)} is starting.");
-
             await client.DirectoryGetAsync();
             await client.NonceGetAsync();
-
-            client._logger?.LogInformation($"{nameof(AcmeClient)} is ready.");
 
             return client;
         }
 
-        private async Task<HttpResponseMessage> Request(
+        protected async Task<HttpResponseMessage> Request(
             string url,
             HttpMethod method = null,
             object parameters = null,
-            bool skipNonce = false,
             bool skipSigning = false,
-            bool includePublicKey = false,
-            HttpStatusCode correctHttpStatusCode = HttpStatusCode.OK
+            bool includePublicKey = false
         )
         {
             string content = null;
@@ -117,29 +113,21 @@ namespace PeculiarVentures.ACME.Client
             if (!String.IsNullOrEmpty(content))
             {
                 request.Content = new StringContent(content);
-                request.Content.Headers.ContentType = MediaTypeHeader.JsonContentTypeHeaderValue;
+                request.Content.Headers.ContentType = Protocol.MediaTypeHeader.JsonContentTypeHeaderValue;
             }
 
             _logger?.LogDebug($"{nameof(AcmeClient)} request \nParameters: \n{request} \nContent: \n{content}");
 
             var response = await _http.SendAsync(request);
 
-            if (!skipNonce)
-            {
-                if (response.Headers.TryGetValues("replay-nonce", out var values))
-                {
-                    Nonce = string.Join(",", values);
-                }
-            }
-
-            if (response.StatusCode != correctHttpStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
                 string message = null;
-                Error error = null;
+                Protocol.Error error = null;
 
-                if (MediaTypeHeader.ProblemJsonContentTypeHeaderValue.Equals(response.Content?.Headers?.ContentType))
+                if (Protocol.MediaTypeHeader.ProblemJsonContentTypeHeaderValue.Equals(response.Content?.Headers?.ContentType))
                 {
-                    error = await Deserialize<Error>(response);
+                    error = await Deserialize<Protocol.Error>(response);
                     message = error.Detail;
                 }
 
@@ -155,38 +143,62 @@ namespace PeculiarVentures.ACME.Client
                 throw ex;
             }
 
+            response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
+
+            if (replayNonceValues != null)
+            {
+                Nonce = replayNonceValues.FirstOrDefault();
+            }
+
             return response;
         }
 
-        private async Task<T> Request<T>(
+        protected async Task<AcmeResponse<T>> Request<T>(
             string url,
             HttpMethod method = null,
             object parameters = null,
-            bool skipNonce = false,
             bool skipSigning = false,
-            bool includePublicKey = false,
-            HttpStatusCode correctHttpStatusCode = HttpStatusCode.OK
-        )
+            bool includePublicKey = false
+        ) where T : class
         {
-            return await Deserialize<T>(await Request(url, method, parameters, skipNonce, skipSigning, includePublicKey, correctHttpStatusCode));
+            var response = await Request(url, method, parameters, skipSigning, includePublicKey);
+
+            response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
+            response.Headers.TryGetValues("location", out var locationValues);
+            response.Headers.TryGetValues("links", out var linksValues);
+
+            var acmeResponse = new AcmeResponse<T>
+            {
+                StatusCode = (int)response.StatusCode,
+                ReplayNonce = replayNonceValues?.FirstOrDefault(),
+                Location = locationValues?.FirstOrDefault(),
+                Links = linksValues != null ? new LinkHeaderCollection(linksValues.ToArray()) : null,
+                Content = await Deserialize<T>(response),
+            };
+
+            _logger?.LogDebug($"{nameof(AcmeClient)} response: \n{acmeResponse}");
+
+            return acmeResponse;
         }
 
-        private async Task<T> Deserialize<T>(HttpResponseMessage response)
+        protected async Task<T> Deserialize<T>(HttpResponseMessage response)
         {
             var content = await response.Content.ReadAsStringAsync();
 
-            _logger?.LogDebug($"{nameof(AcmeClient)} response \nParameters: \n{response} \nContent: \n{content}");
-
-            return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync());
+            return JsonConvert.DeserializeObject<T>(content);
         }
 
         /// <summary>
         /// Retrieves the Directory object from the target ACME CA.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.1"/>
-        public async Task<Protocol.Directory> DirectoryGetAsync()
+        public async Task<AcmeResponse<Protocol.Directory>> DirectoryGetAsync()
         {
-            return Directory = await Request<Protocol.Directory>("directory", skipNonce: true);
+            var response = await Request<Protocol.Directory>("directory");
+
+            Directory = response.Content;
+
+            return response;
         }
 
         /// <summary>
@@ -202,29 +214,29 @@ namespace PeculiarVentures.ACME.Client
         /// Account create.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3"/>
-        public async Task<Account> AccountCreateAsync(Protocol.Messages.NewAccount account)
+        public async Task<AcmeResponse<Protocol.Account>> AccountCreateAsync(Protocol.Messages.NewAccount account)
         {
-            var response = await Request(Directory.NewAccount, HttpMethod.Post, account, includePublicKey: true, correctHttpStatusCode: HttpStatusCode.Created);
+            var response = await Request<Protocol.Account>(Directory.NewAccount, HttpMethod.Post, account, includePublicKey: true);
 
-            Location = response.Headers.Location?.ToString();
-
-            if (string.IsNullOrEmpty(Location))
+            if (string.IsNullOrEmpty(response.Location))
             {
-                var ex = new AcmeException(ErrorType.IncorrectResponse, "Account creation response does not include Location header.");
+                var ex = new AcmeException(Protocol.ErrorType.IncorrectResponse, "Account creation response does not include Location header.");
 
                 _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 
                 throw ex;
             }
 
-            return await Deserialize<Account>(response);
+            Location = response.Location;
+
+            return response;
         }
 
         /// <summary>
         /// Account create with external account binding.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.5"/>
-        public async Task<Account> AccountCreateAsync(Protocol.Messages.NewAccount account, string kid, string keyMac)
+        public async Task<AcmeResponse<Protocol.Account>> AccountCreateAsync(Protocol.Messages.NewAccount account, string kid, string keyMac)
         {
             var jws = new JsonWebSignature();
 
@@ -253,29 +265,29 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.2"/>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.3"/>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.4"/>
-        public async Task<Account> AccountUpdateAsync(Protocol.Messages.NewAccount account)
+        public async Task<AcmeResponse<Protocol.Account>> AccountUpdateAsync(Protocol.Messages.NewAccount account)
         {
-            var response = await Request(Location, HttpMethod.Post, account, correctHttpStatusCode: HttpStatusCode.Created);
+            var response = await Request<Protocol.Account>(Location, HttpMethod.Post, account);
 
-            Location = response.Headers.Location?.ToString();
-
-            if (string.IsNullOrEmpty(Location))
+            if (string.IsNullOrEmpty(response.Location))
             {
-                var ex = new AcmeException(ErrorType.IncorrectResponse, "Account creation response does not include Location header.");
+                var ex = new AcmeException(Protocol.ErrorType.IncorrectResponse, "Account updating response does not include Location header.");
 
                 _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 
                 throw ex;
             }
 
-            return await Deserialize<Account>(response);
+            Location = response.Location;
+
+            return response;
         }
 
         /// <summary>
         /// Rotates the current Public key that is associated with this Account by the target ACME CA with a new Public key.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-18#section-7.3.5"/>
-        public async Task<Account> AccountChangeKeyAsync(AsymmetricAlgorithm keyNew)
+        public async Task<AcmeResponse<Protocol.Account>> AccountChangeKeyAsync(AsymmetricAlgorithm keyNew)
         {
             var jws = new JsonWebSignature();
             var jwk = new JsonWebKey(Key);
@@ -294,22 +306,24 @@ namespace PeculiarVentures.ACME.Client
             });
             jws.Sign(keyNew);
 
-            var response = await Request(Directory.KeyChange, HttpMethod.Post, jws);
+            var response = await Request<Protocol.Account>(Directory.KeyChange, HttpMethod.Post, jws);
 
             Key = keyNew;
 
-            return await Deserialize<Account>(response);
+            return response;
         }
 
         /// <summary>
         /// Deactivates the current Account associated with this client.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.7"/>
-        public async Task<Account> AccountDeactivateAsync()
+        public async Task<AcmeResponse<Protocol.Account>> AccountDeactivateAsync()
         {
-            var response = await Request(Location, HttpMethod.Post, new Account { Status = AccountStatus.Deactivated });
-
-            return await Deserialize<Account>(response);
+            return await Request<Protocol.Account>(
+                Location,
+                HttpMethod.Post,
+                new Protocol.Account { Status = Protocol.AccountStatus.Deactivated }
+            );
         }
 
         /// <summary>
@@ -317,11 +331,9 @@ namespace PeculiarVentures.ACME.Client
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.4"/>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3"/>
-        public async Task<Order> OrderCreateAsync(Protocol.Messages.NewOrder order)
+        public async Task<AcmeResponse<Protocol.Order>> OrderCreateAsync(Protocol.Messages.NewOrder order)
         {
-            var response = await Request(Directory.NewOrder, HttpMethod.Post, order, correctHttpStatusCode: HttpStatusCode.Created);
-
-            return await Deserialize<Order>(response);
+            return await Request<Protocol.Order>(Directory.NewOrder, HttpMethod.Post, order);
         }
 
         /// <summary>
@@ -329,11 +341,9 @@ namespace PeculiarVentures.ACME.Client
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.4"/>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3"/>
-        public async Task<Order> OrderGetAsync(string orderUrl)
+        public async Task<AcmeResponse<Protocol.Order>> OrderGetAsync(string orderUrl)
         {
-            var response = await Request(orderUrl, skipNonce: true, correctHttpStatusCode: HttpStatusCode.Created);
-
-            return await Deserialize<Order>(response);
+            return await Request<Protocol.Order>(orderUrl, HttpMethod.Post, "");
         }
 
         /// <summary>
@@ -351,11 +361,13 @@ namespace PeculiarVentures.ACME.Client
         /// Applying for Certificate Issuance.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.4"/>
-        public async Task<Order> OrderFinalizeAsync(string orderUrl, string csr)
+        public async Task<AcmeResponse<Protocol.Order>> OrderFinalizeAsync(string orderUrl, Protocol.Messages.FinalizeOrder finalizeOrder)
         {
-            var response = await Request(orderUrl, HttpMethod.Post, new Protocol.Messages.FinalizeOrder { Csr = csr });
-
-            return await Deserialize<Order>(response);
+            return await Request<Protocol.Order>(
+                orderUrl,
+                HttpMethod.Post,
+                finalizeOrder
+            );
         }
 
         /// <summary>
@@ -363,53 +375,56 @@ namespace PeculiarVentures.ACME.Client
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5"/>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.4"/>
-        public async Task<Protocol.Authorization> AuthorizationCreateAsync(string authorizationUrl)
+        public async Task<AcmeResponse<Protocol.Authorization>> AuthorizationCreateAsync(string authorizationUrl)
         {
-            var response = await Request(authorizationUrl, HttpMethod.Post, "");
-
-            return await Deserialize<Protocol.Authorization>(response);
+            return await Request<Protocol.Authorization>(authorizationUrl, HttpMethod.Post, "");
         }
 
         /// <summary>
         /// Deactivates a specific Authorization and thereby relinquishes the authority to issue Certificates for the associated Identifier.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5.2"/>
-        public async Task<Protocol.Authorization> AuthorizationDeactivateAsync(string authorizationUrl)
+        public async Task<AcmeResponse<Protocol.Authorization>> AuthorizationDeactivateAsync(string authorizationUrl)
         {
-            var response = await Request(authorizationUrl, HttpMethod.Post, new Protocol.Authorization { Status = AuthorizationStatus.Deactivated });
-
-            return await Deserialize<Protocol.Authorization>(response);
+            return await Request<Protocol.Authorization>(
+                authorizationUrl,
+                HttpMethod.Post,
+                new Protocol.Authorization
+                {
+                    Status = Protocol.AuthorizationStatus.Deactivated
+                }
+            );
         }
 
         /// <summary>
         /// Responding to Challenges.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5.1"/>
-        public async Task<Challenge> ChallengeValidateAsync(string challengeUrl)
+        public async Task<AcmeResponse<Protocol.Challenge>> ChallengeValidateAsync(string challengeUrl)
         {
-            var response = await Request(challengeUrl, HttpMethod.Post, new { });
-
-            return await Deserialize<Challenge>(response);
+            return await Request<Protocol.Challenge>(challengeUrl, HttpMethod.Post, new { });
         }
 
         /// <summary>
         /// Responding to Challenges.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5.1"/>
-        public async Task<Challenge> ChallengeGetAsync(string challengeUrl)
+        public async Task<AcmeResponse<Protocol.Challenge>> ChallengeGetAsync(string challengeUrl)
         {
-            var response = await Request(challengeUrl, HttpMethod.Post, "");
-
-            return await Deserialize<Challenge>(response);
+            return await Request<Protocol.Challenge>(challengeUrl, HttpMethod.Post, "");
         }
 
         /// <summary>
         /// Certificate revoke.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-18#section-7.6"/>
-        public async Task CertificateRevokeAsync(string certificate)
+        public async Task CertificateRevokeAsync(Protocol.Messages.RevokeCertificate revokeCertificate)
         {
-            await Request(Directory.RevokeCertificate, HttpMethod.Post, new Protocol.Messages.RevokeCertificate { Certificate = certificate });
+            await Request(
+                Directory.RevokeCertificate,
+                HttpMethod.Post,
+                revokeCertificate
+            );
         }
     }
 }

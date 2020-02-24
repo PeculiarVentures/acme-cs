@@ -21,7 +21,7 @@ namespace PeculiarVentures.ACME.Client
     // TODO: Need to write tests for a error states
     public class AcmeClientTests
     {
-        private const string _url = "https://acme-staging-v02.api.letsencrypt.org/";
+        private const string _directory = "https://acme-staging-v02.api.letsencrypt.org/directory";
         private const string _contact = "mailto:spark1.dell@gmail.com";
         private const string _domain = "aeg-dev0-srv.aegdomain2.com";
 
@@ -33,10 +33,9 @@ namespace PeculiarVentures.ACME.Client
 
         private async Task<AcmeClient> GetClient()
         {
-            var key = AsymmetricAlgorithm.Create("RSA");
-            key.KeySize = 2048;
+            var key = RSA.Create(2048);
 
-            return await AcmeClient.CreateAsync(new Uri(_url), key);
+            return await AcmeClient.CreateAsync(new Uri(_directory), key);
         }
 
         private async Task CreateUrlTestServer(string challengeToken, JsonWebKey key)
@@ -94,8 +93,8 @@ namespace PeculiarVentures.ACME.Client
             });
             Assert.NotNull(account);
             Assert.NotNull(client.Location);
-            Assert.Equal(AccountStatus.Valid, account.Status);
-            Assert.Single(account.Contacts);
+            Assert.Equal(AccountStatus.Valid, account.Content.Status);
+            Assert.Single(account.Content.Contacts);
         }
 
         [Fact]
@@ -111,12 +110,12 @@ namespace PeculiarVentures.ACME.Client
             });
             Assert.NotNull(account);
             Assert.NotNull(client.Location);
-            Assert.Equal(AccountStatus.Valid, account.Status);
-            Assert.Single(account.Contacts);
+            Assert.Equal(AccountStatus.Valid, account.Content.Status);
+            Assert.Single(account.Content.Contacts);
 
             account = await client.AccountDeactivateAsync();
             Assert.NotNull(account);
-            Assert.Equal(AccountStatus.Deactivated, account.Status);
+            Assert.Equal(AccountStatus.Deactivated, account.Content.Status);
         }
 
         [Fact]
@@ -136,10 +135,10 @@ namespace PeculiarVentures.ACME.Client
                 Identifiers = identifiers,
             });
             Assert.NotNull(order);
-            Assert.Equal(OrderStatus.Pending, order.Status);
-            Assert.Equal(identifiers.Count, order.Identifiers.Length);
-            Assert.Single(order.Authorizations);
-            Assert.NotNull(order.Finalize);
+            Assert.Equal(OrderStatus.Pending, order.Content.Status);
+            Assert.Equal(identifiers.Count, order.Content.Identifiers.Length);
+            Assert.Single(order.Content.Authorizations);
+            Assert.NotNull(order.Content.Finalize);
         }
 
         [Fact]
@@ -157,11 +156,11 @@ namespace PeculiarVentures.ACME.Client
                 Identifiers = new List<Identifier> { _identifier },
             });
 
-            var authorization = await client.AuthorizationCreateAsync(order.Authorizations[0]);
+            var authorization = await client.AuthorizationCreateAsync(order.Content.Authorizations[0]);
             Assert.NotNull(authorization);
-            Assert.Equal(AuthorizationStatus.Pending, authorization.Status);
-            Assert.Equal(order.Identifiers[0].ToString(), authorization.Identifier.ToString());
-            Assert.Equal(3, authorization.Challenges.Count);
+            Assert.Equal(AuthorizationStatus.Pending, authorization.Content.Status);
+            Assert.Equal(order.Content.Identifiers[0].ToString(), authorization.Content.Identifier.ToString());
+            Assert.Equal(3, authorization.Content.Challenges.Count);
         }
 
         [Fact]
@@ -178,18 +177,18 @@ namespace PeculiarVentures.ACME.Client
             {
                 Identifiers = new List<Identifier> { _identifier },
             });
-            var authorization = await client.AuthorizationCreateAsync(order.Authorizations[0]);
+            var authorization = await client.AuthorizationCreateAsync(order.Content.Authorizations[0]);
 
-            foreach (var authorizationChallenge in authorization.Challenges)
+            foreach (var authorizationChallenge in authorization.Content.Challenges)
             {
                 if (authorizationChallenge.Type == "http-01")
                 {
                     var challenge = await client.ChallengeGetAsync(authorizationChallenge.Url);
                     Assert.NotNull(challenge);
-                    Assert.Equal(ChallengeStatus.Pending, challenge.Status);
-                    Assert.Equal("http-01", challenge.Type);
-                    Assert.NotEmpty(challenge.Url);
-                    Assert.NotEmpty(challenge.Token);
+                    Assert.Equal(ChallengeStatus.Pending, challenge.Content.Status);
+                    Assert.Equal("http-01", challenge.Content.Type);
+                    Assert.NotEmpty(challenge.Content.Url);
+                    Assert.NotEmpty(challenge.Content.Token);
                 }
             }
         }
@@ -208,26 +207,26 @@ namespace PeculiarVentures.ACME.Client
             {
                 Identifiers = new List<Identifier> { _identifier },
             });
-            var authorization = await client.AuthorizationCreateAsync(order.Authorizations[0]);
+            var authorization = await client.AuthorizationCreateAsync(order.Content.Authorizations[0]);
 
-            foreach (var authorizationChallenge in authorization.Challenges)
+            foreach (var authorizationChallenge in authorization.Content.Challenges)
             {
                 if (authorizationChallenge.Type == "http-01")
                 {
-                    await CreateUrlTestServer(authorizationChallenge.Token, account.Key);
+                    await CreateUrlTestServer(authorizationChallenge.Token, account.Content.Key);
 
                     var challenge = await client.ChallengeValidateAsync(authorizationChallenge.Url);
                     Assert.NotNull(challenge);
-                    Assert.Equal(ChallengeStatus.Pending, challenge.Status);
-                    Assert.Equal("http-01", challenge.Type);
-                    Assert.NotEmpty(challenge.Url);
-                    Assert.NotEmpty(challenge.Token);
+                    Assert.Equal(ChallengeStatus.Pending, challenge.Content.Status);
+                    Assert.Equal("http-01", challenge.Content.Type);
+                    Assert.NotEmpty(challenge.Content.Url);
+                    Assert.NotEmpty(challenge.Content.Token);
 
                     Thread.Sleep(5 * 1000);
 
                     challenge = await client.ChallengeGetAsync(authorizationChallenge.Url);
                     Assert.NotNull(challenge);
-                    Assert.Equal(ChallengeStatus.Valid, challenge.Status);
+                    Assert.Equal(ChallengeStatus.Valid, challenge.Content.Status);
                 }
             }
         }
@@ -246,20 +245,20 @@ namespace PeculiarVentures.ACME.Client
             {
                 Identifiers = new List<Identifier> { _identifier },
             });
-            var authorization = await client.AuthorizationCreateAsync(order.Authorizations[0]);
+            var authorization = await client.AuthorizationCreateAsync(order.Content.Authorizations[0]);
 
-            foreach (var authorizationChallenge in authorization.Challenges)
+            foreach (var authorizationChallenge in authorization.Content.Challenges)
             {
                 if (authorizationChallenge.Type == "http-01")
                 {
-                    await CreateUrlTestServer(authorizationChallenge.Token, account.Key);
+                    await CreateUrlTestServer(authorizationChallenge.Token, account.Content.Key);
 
                     var challenge = await client.ChallengeValidateAsync(authorizationChallenge.Url);
                     Assert.NotNull(challenge);
-                    Assert.Equal(ChallengeStatus.Pending, challenge.Status);
-                    Assert.Equal("http-01", challenge.Type);
-                    Assert.NotEmpty(challenge.Url);
-                    Assert.NotEmpty(challenge.Token);
+                    Assert.Equal(ChallengeStatus.Pending, challenge.Content.Status);
+                    Assert.Equal("http-01", challenge.Content.Type);
+                    Assert.NotEmpty(challenge.Content.Url);
+                    Assert.NotEmpty(challenge.Content.Token);
 
                     Thread.Sleep(5 * 1000);
 
@@ -275,11 +274,11 @@ namespace PeculiarVentures.ACME.Client
                     var csr = new Pkcs10CertificateRequest(param, key);
                     var csrDer = Base64Url.Encode(csr.Export());
 
-                    var orderFinal = await client.OrderFinalizeAsync(order.Finalize, csrDer);
-                    Assert.Equal(OrderStatus.Valid, orderFinal.Status);
-                    Assert.NotEmpty(orderFinal.Certificate);
+                    var orderFinal = await client.OrderFinalizeAsync(order.Content.Finalize, new FinalizeOrder { Csr = csrDer });
+                    Assert.Equal(OrderStatus.Valid, orderFinal.Content.Status);
+                    Assert.NotEmpty(orderFinal.Content.Certificate);
 
-                    await client.OrderCertificateGetAsync(orderFinal.Certificate);
+                    await client.OrderCertificateGetAsync(orderFinal.Content.Certificate);
                 }
             }
         }
@@ -298,20 +297,20 @@ namespace PeculiarVentures.ACME.Client
             {
                 Identifiers = new List<Identifier> { _identifier },
             });
-            var authorization = await client.AuthorizationCreateAsync(order.Authorizations[0]);
+            var authorization = await client.AuthorizationCreateAsync(order.Content.Authorizations[0]);
 
-            foreach (var authorizationChallenge in authorization.Challenges)
+            foreach (var authorizationChallenge in authorization.Content.Challenges)
             {
                 if (authorizationChallenge.Type == "http-01")
                 {
-                    await CreateUrlTestServer(authorizationChallenge.Token, account.Key);
+                    await CreateUrlTestServer(authorizationChallenge.Token, account.Content.Key);
 
                     var challenge = await client.ChallengeValidateAsync(authorizationChallenge.Url);
                     Assert.NotNull(challenge);
-                    Assert.Equal(ChallengeStatus.Pending, challenge.Status);
-                    Assert.Equal("http-01", challenge.Type);
-                    Assert.NotEmpty(challenge.Url);
-                    Assert.NotEmpty(challenge.Token);
+                    Assert.Equal(ChallengeStatus.Pending, challenge.Content.Status);
+                    Assert.Equal("http-01", challenge.Content.Type);
+                    Assert.NotEmpty(challenge.Content.Url);
+                    Assert.NotEmpty(challenge.Content.Token);
 
                     Thread.Sleep(5 * 1000);
 
@@ -325,17 +324,15 @@ namespace PeculiarVentures.ACME.Client
                     var key = RSA.Create();
                     key.ExportParameters(true);
                     var csr = new Pkcs10CertificateRequest(param, key);
-                    var csrDerBytes = csr.Export();
 
-                    var orderFinal = await client.OrderFinalizeAsync(order.Finalize, Base64Url.Encode(csrDerBytes));
-                    Assert.Equal(OrderStatus.Valid, orderFinal.Status);
-                    Assert.NotEmpty(orderFinal.Certificate);
+                    var orderFinal = await client.OrderFinalizeAsync(order.Content.Finalize, new FinalizeOrder { Csr = Base64Url.Encode(csr.Export()) });
+                    Assert.Equal(OrderStatus.Valid, orderFinal.Content.Status);
+                    Assert.NotEmpty(orderFinal.Content.Certificate);
 
-                    var certificatePemBytes = await client.OrderCertificateGetAsync(orderFinal.Certificate);
+                    var certificatePemBytes = await client.OrderCertificateGetAsync(orderFinal.Content.Certificate);
                     var certificate = new X509Certificate2(certificatePemBytes);
-                    var certificateDerBytes = certificate.Export(X509ContentType.Cert);
 
-                    await client.CertificateRevokeAsync(Base64Url.Encode(certificateDerBytes));
+                    await client.CertificateRevokeAsync(new RevokeCertificate { Certificate = Base64Url.Encode(certificate.Export(X509ContentType.Cert)) });
                 }
             }
         }
