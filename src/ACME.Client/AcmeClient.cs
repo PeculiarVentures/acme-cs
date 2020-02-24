@@ -54,7 +54,7 @@ namespace PeculiarVentures.ACME.Client
         protected async Task<HttpResponseMessage> Request(
             string url,
             HttpMethod method = null,
-            object parameters = null,
+            object payload = null,
             bool includePublicKey = false
         )
         {
@@ -67,7 +67,7 @@ namespace PeculiarVentures.ACME.Client
 
             var request = new HttpRequestMessage(method, url);
 
-            if (parameters != null)
+            if (payload != null)
             {
                 var jws = new JsonWebSignature
                 {
@@ -83,9 +83,9 @@ namespace PeculiarVentures.ACME.Client
                     Key = includePublicKey ? new JsonWebKey(Key) : null
                 });
 
-                if (!(parameters is string))
+                if (!(payload is string))
                 {
-                    jws.SetPayload(parameters);
+                    jws.SetPayload(payload);
                 }
 
                 jws.Sign(Key);
@@ -139,11 +139,11 @@ namespace PeculiarVentures.ACME.Client
         protected async Task<AcmeResponse<T>> Request<T>(
             string url,
             HttpMethod method = null,
-            object parameters = null,
+            object payload = null,
             bool includePublicKey = false
         ) where T : class
         {
-            var response = await Request(url, method, parameters, includePublicKey);
+            var response = await Request(url, method, payload, includePublicKey);
 
             response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
             response.Headers.TryGetValues("location", out var locationValues);
