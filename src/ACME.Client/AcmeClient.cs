@@ -55,7 +55,6 @@ namespace PeculiarVentures.ACME.Client
             string url,
             HttpMethod method = null,
             object parameters = null,
-            bool skipSigning = false,
             bool includePublicKey = false
         )
         {
@@ -70,44 +69,28 @@ namespace PeculiarVentures.ACME.Client
 
             if (parameters != null)
             {
-                if (skipSigning)
+                var jws = new JsonWebSignature
                 {
-                    content = JsonConvert.SerializeObject(parameters, Formatting.Indented);
-                }
-                else
+                    Payload = "",
+                };
+
+                jws.SetProtected(new JsonWebSignatureProtected
                 {
-                    JsonWebSignature jws = new JsonWebSignature
-                    {
-                        Payload = "",
-                    };
+                    Algorithm = AlgorithmsEnum.RS256,
+                    Nonce = Nonce,
+                    Url = url,
+                    KeyID = includePublicKey ? null : Location,
+                    Key = includePublicKey ? new JsonWebKey(Key) : null
+                });
 
-                    var jwsProtected = new JsonWebSignatureProtected
-                    {
-                        Algorithm = AlgorithmsEnum.RS256,
-                        Nonce = Nonce,
-                        Url = url,
-                    };
-
-                    if (includePublicKey)
-                    {
-                        jwsProtected.Key = new JsonWebKey(Key);
-                    }
-                    else
-                    {
-                        jwsProtected.KeyID = Location;
-                    }
-
-                    jws.SetProtected(jwsProtected);
-
-                    if (!(parameters is string))
-                    {
-                        jws.SetPayload(parameters);
-                    }
-
-                    jws.Sign(Key);
-
-                    content = JsonConvert.SerializeObject(jws, Formatting.Indented);
+                if (!(parameters is string))
+                {
+                    jws.SetPayload(parameters);
                 }
+
+                jws.Sign(Key);
+
+                content = JsonConvert.SerializeObject(jws, Formatting.Indented);
             }
 
             if (!String.IsNullOrEmpty(content))
@@ -157,11 +140,10 @@ namespace PeculiarVentures.ACME.Client
             string url,
             HttpMethod method = null,
             object parameters = null,
-            bool skipSigning = false,
             bool includePublicKey = false
         ) where T : class
         {
-            var response = await Request(url, method, parameters, skipSigning, includePublicKey);
+            var response = await Request(url, method, parameters, includePublicKey);
 
             response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
             response.Headers.TryGetValues("location", out var locationValues);
@@ -216,7 +198,7 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountCreateAsync(Protocol.Messages.NewAccount account)
         {
-            var response = await Request<Protocol.Account>(Directory.NewAccount, HttpMethod.Post, account, includePublicKey: true);
+            var response = await Request<Protocol.Account>(Directory.NewAccount, HttpMethod.Post, account, true);
 
             if (string.IsNullOrEmpty(response.Location))
             {
