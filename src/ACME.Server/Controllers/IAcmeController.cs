@@ -15,7 +15,9 @@ namespace PeculiarVentures.ACME.Server.Controllers
         AcmeResponse PostAuthorization(AcmeRequest acmeRequest, int authzId);
         AcmeResponse PostChallenge(AcmeRequest request, int challengeId);
         AcmeResponse FinalizeOrder(AcmeRequest request, int orderId);
-        AcmeResponse GetCertificate(AcmeRequest request, string id);
+        AcmeResponse GetCertificate(AcmeRequest acmeRequest, string id);
+        AcmeResponse GetTemplates(AcmeRequest acmeRequest);
         AcmeResponse RevokeCertificate(AcmeRequest request);
+        AcmeResponse GetExchangeItem(AcmeRequest request);
     }
 }

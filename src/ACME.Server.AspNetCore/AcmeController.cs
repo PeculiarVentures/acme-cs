@@ -226,11 +226,29 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
 
         }
 
+        [Route("templates")]
+        [HttpPost]
+        public ActionResult GetTemplates([FromBody]JsonWebSignature token)
+        {
+            var response = Controller.GetTemplates(GetAcmeRequest(token));
+
+            return CreateActionResult(response);
+        }
+        
         [Route("revoke")]
         [HttpPost]
         public ActionResult RevokeCertificate([FromBody]JsonWebSignature token)
         {
             var response = Controller.RevokeCertificate(GetAcmeRequest(token));
+
+            return CreateActionResult(response);
+        }
+
+        [Route("exchange")]
+        [HttpPost]
+        public ActionResult GetEchangeItem([FromBody]JsonWebSignature token)
+        {
+            var response = Controller.GetExchangeItem(GetAcmeRequest(token));
 
             return CreateActionResult(response);
         }

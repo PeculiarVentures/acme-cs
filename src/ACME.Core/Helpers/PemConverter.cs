@@ -9,6 +9,11 @@ namespace PeculiarVentures.ACME
     /// </summary>
     public class PemConverter
     {
+        public const string CertificateTag = "CERTIFICATE";
+        public const string CertificateRequestTag = "CERTIFICATE REQUEST";
+        public const string PublicKeyTag = "PUBLIC KEY";
+        public const string PrivateKeyTag = "PRIVATE KEY";
+
         /// <summary>
         /// Converts PEM to byte[]
         /// </summary>

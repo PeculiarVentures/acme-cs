@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace PeculiarVentures.ACME.Protocol.Messages
 {
@@ -11,5 +12,8 @@ namespace PeculiarVentures.ACME.Protocol.Messages
         [JsonProperty("csr")]
         [JsonRequired]
         public string Csr { get; set; }
+
+        [JsonProperty("archivedKey")]
+        public string ArchivedKey { get; set; }
     }
 }

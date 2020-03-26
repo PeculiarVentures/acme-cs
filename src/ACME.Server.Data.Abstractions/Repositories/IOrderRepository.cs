@@ -8,5 +8,6 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Repositories
         IOrder GetByThumbprint(string thumbprint);
         ICertificate CreateCertificate(X509Certificate2 cert);
         IOrder LastByIdentifier(int accountId, string identifier);
+        IOrder LastByTemplate(int accountId, string templateId);
     }
 }

@@ -22,7 +22,7 @@ namespace PeculiarVentures.ACME.Cryptography
         public Attribute[] Attributes
         {
             get;
-            set;    
-        }
+            set;
+        } = new Attribute[0];
     }
 }

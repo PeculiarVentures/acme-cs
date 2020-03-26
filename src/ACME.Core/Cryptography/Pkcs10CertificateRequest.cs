@@ -78,7 +78,7 @@ namespace PeculiarVentures.ACME.Cryptography
                 {
                     var SubjectPublicKeyInfo = GetCertRequest().GetCertificationRequestInfo().SubjectPublicKeyInfo;
                     var oid = new Oid(SubjectPublicKeyInfo.AlgorithmID.Algorithm.Id);
-                    var keyValue = new AsnEncodedData(SubjectPublicKeyInfo.PublicKeyData.GetEncoded());
+                    var keyValue = new AsnEncodedData(SubjectPublicKeyInfo.PublicKeyData.GetBytes());
                     var parameters = new AsnEncodedData(SubjectPublicKeyInfo.AlgorithmID.Parameters.GetEncoded());
                     _publicKey = new PublicKey(oid, parameters, keyValue);
                 }
@@ -399,7 +399,7 @@ namespace PeculiarVentures.ACME.Cryptography
         public void Generate(CertificateRequestParams param, RSA key)
         {
             //Requested Certificate Name
-            X509Name name = string.IsNullOrEmpty(param.CommonName) ? X509Name.GetInstance(new DerSequence()) : new X509Name(param.CommonName);
+            X509Name name = string.IsNullOrEmpty(param.CommonName) ? X509Name.GetInstance(new DerSequence(new DerSet())) : new X509Name(param.CommonName);
 
             string signatureAlgorithm = param.SignatureAlgorithm.ToString();
 

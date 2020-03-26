@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
+using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
@@ -43,9 +46,9 @@ namespace PeculiarVentures.ACME.Server.Services
                 Key = data.Key,
                 CreatedAt = data.CreatedAt,
             };
-            if (ExternalAccountRepository != null && data.ExternalAccountId != null)
+            if(data.ExternalAccountId != null)
             {
-                account.ExternalAccountBinding = ExternalAccountRepository.GetById(account.Id).Account;
+                account.ExternalAccountBinding = ExternalAccountRepository.GetById(data.ExternalAccountId.Value).Account;
             }
             return account;
         }
@@ -98,9 +101,8 @@ namespace PeculiarVentures.ACME.Server.Services
                 .Select(o => AuthorizationRepository.GetById(o.AuthorizationId))
                 .ToArray();
 
-            return new Order
+            var order = new Order
             {
-                Id = data.Id,
                 Identifiers = authzs.Select(o =>
                     new Identifier(o.Identifier.Type, o.Identifier.Value)).ToArray(),
                 Authorizations = authzs.Select(o => $"{o.Id}").ToArray(),
@@ -110,8 +112,36 @@ namespace PeculiarVentures.ACME.Server.Services
                 Expires = data.Expires,
                 Error = data.Error == null ? null : ToError(data.Error),
                 Finalize = $"{data.Id}",
-                Certificate = data.Certificate == null ? null : $"{data.Certificate.Thumbprint}"
+                Template = data.TemplateId == null 
+                    ? null 
+                    : new Uri(new Uri(Options.BaseAddress), $"template/{data.TemplateId}").ToString(),
+                Certificate = data.Certificate?.RawData == null ? null : $"{data.Certificate.Thumbprint}"
             };
+
+            return order;
+        }
+
+        public ExchangeItem ToExchangeItem(IExchangeItem exchangeItem)
+        {
+            if (exchangeItem.Key != null)
+            {
+                return new ExchangeItem
+                {
+                    Key = new JsonWebKey(exchangeItem.Key),
+                };
+            } else if (exchangeItem.Certificates != null)
+            {
+                var list = new List<X509Certificate2>();
+                foreach (var cert in exchangeItem.Certificates)
+                {
+                    list.Add(cert);
+                }
+                return new ExchangeItem
+                {
+                    CertificateChain = list.Select(o => Convert.ToBase64String(o.RawData)).ToArray(),
+                };
+            }
+            throw new MalformedException($"Bad value of {nameof(IExchangeItem)}");
         }
     }
 }

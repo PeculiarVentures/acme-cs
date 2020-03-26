@@ -43,5 +43,7 @@ namespace PeculiarVentures.ACME.Server.Data.EF.Core.Models
         public virtual Account Account { get; set; }
 
         public string Identifier { get; set; }
+
+        public string TemplateId { get; set; }
     }
 }

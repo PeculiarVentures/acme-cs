@@ -15,6 +15,7 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public ChallengeService(IChallengeRepository challengeRepository,
                                 IAuthorizationRepository authorizationRepository,
+                                IAccountService accountService,
                                 IOptions<ServerOptions> options)
             : base(options)
         {
@@ -22,8 +23,11 @@ namespace PeculiarVentures.ACME.Server.Services
                 ?? throw new ArgumentNullException(nameof(challengeRepository));
             AuthorizationRepository = authorizationRepository
                 ?? throw new ArgumentNullException(nameof(authorizationRepository));
+            AccountService = accountService 
+                ?? throw new ArgumentNullException(nameof(accountService));
         }
 
+        private IAccountService AccountService { get; }
         private IChallengeRepository ChallengeRepository { get; }
         private IAuthorizationRepository AuthorizationRepository { get; }
 

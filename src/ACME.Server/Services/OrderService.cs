@@ -6,6 +6,13 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Cms;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
 using PeculiarVentures.ACME.Cryptography;
 using PeculiarVentures.ACME.Helpers;
 using PeculiarVentures.ACME.Protocol;
@@ -22,22 +29,35 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public OrderService(
             IOrderRepository orderRepository,
+            IAccountService accountService,
             IAuthorizationService authorizationService,
             IOrderAuthorizationRepository orderAuthorizationRepository,
+            ITemplateService templateService,
+            ICertificateEnrollmentService certificateEnrollmentService,
             IOptions<ServerOptions> options)
             : base(options)
         {
             OrderRepository = orderRepository
                 ?? throw new ArgumentNullException(nameof(orderRepository));
+            AccountService = accountService
+                ?? throw new ArgumentNullException(nameof(accountService));
             AuthorizationService = authorizationService
                 ?? throw new ArgumentNullException(nameof(authorizationService));
             OrderAuthorizationRepository = orderAuthorizationRepository
                 ?? throw new ArgumentNullException(nameof(orderAuthorizationRepository));
+            TemplateService = templateService
+                ?? throw new ArgumentNullException(nameof(templateService));
+            CertificateEnrollmentService = certificateEnrollmentService
+                ?? throw new ArgumentNullException(nameof(certificateEnrollmentService));
         }
 
         public IOrderRepository OrderRepository { get; }
+        public IAccountService AccountService { get; }
         public IAuthorizationService AuthorizationService { get; }
         public IOrderAuthorizationRepository OrderAuthorizationRepository { get; }
+        public ITemplateService TemplateService { get; }
+        public ICertificateEnrollmentService CertificateEnrollmentService { get; }
+        public ICertificateEnrollmentService GetCertificateEnrollmentService { get; }
 
         public string ComputerIdentifier(Identifier[] identifiers, string hashAlgorithm)
         {
@@ -62,25 +82,38 @@ namespace PeculiarVentures.ACME.Server.Services
             var order = OrderRepository.Create();
 
             order.AccountId = accountId;
+            order.NotBefore = @params.NotBefore;
+            order.NotAfter = @params.NotAfter;
 
             order = OrderRepository.Add(order);
 
-            var listDate = new List<DateTime>();
-            foreach (var identifier in @params.Identifiers)
+            if (@params.GsTemplate != null)
             {
-                var authz = AuthorizationService.GetActual(accountId, identifier)
-                    ?? AuthorizationService.Create(accountId, identifier);
-
-                var orderAuthz = OrderAuthorizationRepository.Create(order.Id, authz.Id);
-                OrderAuthorizationRepository.Add(orderAuthz);
-
-                if (authz.Expires != null)
-                {
-                    listDate.Add(authz.Expires.Value);
-                }
+                // Ignore Identifiers if Template presents
+                TemplateService.GetById(accountId, @params.GsTemplate);
+                order.TemplateId = @params.GsTemplate;
+                order.Expires = DateTime.UtcNow.AddDays(Options.ExpireAuthorizationDays);
+                order.Status = OrderStatus.Ready;
             }
-            // set min expiration date from authorizations
-            order.Expires = listDate.Min(o => o);
+            else
+            {
+                var listDate = new List<DateTime>();
+                foreach (var identifier in @params.Identifiers)
+                {
+                    var authz = AuthorizationService.GetActual(accountId, identifier)
+                        ?? AuthorizationService.Create(accountId, identifier);
+
+                    var orderAuthz = OrderAuthorizationRepository.Create(order.Id, authz.Id);
+                    OrderAuthorizationRepository.Add(orderAuthz);
+
+                    if (authz.Expires != null)
+                    {
+                        listDate.Add(authz.Expires.Value);
+                    }
+                }
+                // set min expiration date from authorizations
+                order.Expires = listDate.Min(o => o);
+            }
 
             order.Identifier = ComputerIdentifier(@params.Identifiers.ToArray(), IDENTIFIER_HASH);
             OrderRepository.Update(order);
@@ -102,15 +135,34 @@ namespace PeculiarVentures.ACME.Server.Services
             order.Status = OrderStatus.Processing;
             OrderRepository.Update(order);
 
+            AsymmetricAlgorithm key = null;
+            if (order.TemplateId != null)
+            {
+                var template = TemplateService.GetById(accountId, order.TemplateId);
+                if (template.Requirements.Archival?.Algorithm != null)
+                {
+                    if (@params.ArchivedKey == null)
+                    {
+                        throw new MalformedException("Archived key is required");
+                    }
+                    key = DecryptArchivedKey(@params.ArchivedKey);
+                }
+            }
+
             Task
                 .Run(async () =>
                 {
                     var requestRaw = Base64Url.Decode(@params.Csr);
                     var request = new Pkcs10CertificateRequest(requestRaw);
-                    var certificate = await Options.EnrollmentHandler.Enroll(order, request);
 
+                    var certificate = await CertificateEnrollmentService.Enroll(order, request);
                     order.Certificate = OrderRepository.CreateCertificate(certificate);
                     OrderRepository.Update(order);
+
+                    if (key != null)
+                    {
+                        CertificateEnrollmentService.ArchiveKey(order, key);
+                    }
                 })
                 .ContinueWith(t =>
                 {
@@ -137,6 +189,13 @@ namespace PeculiarVentures.ACME.Server.Services
             return order;
         }
 
+        private AsymmetricAlgorithm DecryptArchivedKey(string archivedKey)
+        {
+            var json = Base64Url.Decode(archivedKey);
+            var jwk = JsonConvert.DeserializeObject<JsonWebKey>(Encoding.UTF8.GetString(json));
+            return jwk.GetAsymmetricAlgorithm();
+        }
+
         public IOrder GetById(int accountId, int id)
         {
             var order = OrderRepository.GetById(id) ?? throw new MalformedException("Order not found");
@@ -153,53 +212,64 @@ namespace PeculiarVentures.ACME.Server.Services
             return OrderRepository.LastByIdentifier(accountId, identifier);
         }
 
-        public IOrder GetActual(int accountId, Identifier[] identifiers)
+        public IOrder GetActual(int accountId, NewOrder @params)
         {
             #region Check arguments
-            if (identifiers is null)
+            if (@params == null)
             {
-                throw new ArgumentNullException(nameof(identifiers));
+                throw new ArgumentNullException(nameof(@params));
             }
             #endregion
 
-            // Gets order from repository
-            var order = LastByIdentifiers(accountId, identifiers);
-            if (order == null || order.Status == OrderStatus.Invalid)
+            IOrder order = null;
+            if (@params.GsTemplate != null)
             {
-                return null;
-            }
-
-            // Checks expires
-            if (order.Expires != null && order.Expires < DateTime.UtcNow)
-            {
-                order.Status = OrderStatus.Invalid;
+                order = OrderRepository.LastByTemplate(accountId, @params.GsTemplate);
             }
             else
             {
-                // RefreshStatus authorizations
-                var authorizations = OrderAuthorizationRepository.GetByOrder(order.Id)
-                    .Select(o => AuthorizationService.GetById(accountId, o.AuthorizationId))
-                    .ToArray();
-
-                if (order.Status == OrderStatus.Pending)
+                // Gets order from repository
+                order = LastByIdentifiers(accountId, @params.Identifiers.ToArray());
+            }
+            if (!(order == null || order.Status == OrderStatus.Invalid))
+            {
+                // Checks expires
+                if (order.Expires != null && order.Expires < DateTime.UtcNow)
                 {
-                    // Check Authz statuses
-                    if (!authorizations.All(o => o.Status == AuthorizationStatus.Pending
-                        || o.Status == AuthorizationStatus.Valid))
+                    order.Status = OrderStatus.Invalid;
+                }
+                else
+                {
+                    // RefreshStatus authorizations
+                    var authorizations = OrderAuthorizationRepository.GetByOrder(order.Id)
+                        .Select(o => AuthorizationService.GetById(accountId, o.AuthorizationId))
+                        .ToArray();
+
+                    if (order.Status == OrderStatus.Pending)
                     {
-                        order.Status = OrderStatus.Invalid;
-                    }
-                    else if (authorizations.All(o => o.Status == AuthorizationStatus.Valid))
-                    {
-                        order.Status = OrderStatus.Ready;
+                        // Check Authz statuses
+                        if (!authorizations.All(o => o.Status == AuthorizationStatus.Pending
+                            || o.Status == AuthorizationStatus.Valid))
+                        {
+                            order.Status = OrderStatus.Invalid;
+                        }
+                        else if (authorizations.All(o => o.Status == AuthorizationStatus.Valid))
+                        {
+                            order.Status = OrderStatus.Ready;
+                        }
                     }
                 }
+
+                // Update repository
+                OrderRepository.Update(order);
             }
 
-            // Update repository
-            OrderRepository.Update(order);
-
-            return order;
+            return order != null
+                && (order.Status == OrderStatus.Pending
+                || order.Status == OrderStatus.Ready
+                || order.Status == OrderStatus.Processing)
+                ? order
+                : null;
         }
 
         public IOrder GetByCertificate(int accountId, X509Certificate2 x509)
@@ -265,11 +335,17 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public void RevokeCertificate(IOrder order, RevokeReason reason)
         {
-            Task.Run(async () => await Options.EnrollmentHandler.Revoke(order, reason))
+            Task.Run(async () => await CertificateEnrollmentService.Revoke(order, reason))
                 .Wait();
 
             order.Certificate.Revoked = true;
             OrderRepository.Update(order);
+        }
+
+        public IExchangeItem GetExchangeItem(int accountId)
+        {
+            var account = AccountService.GetById(accountId);
+            return CertificateEnrollmentService.GetExchangeItem(account);
         }
     }
 }

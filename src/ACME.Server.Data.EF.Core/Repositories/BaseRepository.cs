@@ -8,7 +8,7 @@ namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
 {
     public abstract class BaseRepository<T, TEntity> : IBaseRepository<T>
         where T : IBaseObject
-        where TEntity : class
+        where TEntity : class, T, new()
     {
         protected BaseRepository(AcmeContext context)
         {

@@ -85,7 +85,9 @@ namespace PeculiarVentures.ACME.Protocol
         [JsonProperty("certificate")]
         public string Certificate { get; set; }
 
-        [JsonIgnore]
-        public int Id { get; set; }
+        /// <summary>
+        /// A URK for them template
+        /// </summary>
+        public string Template { get; set; }
     }
 }

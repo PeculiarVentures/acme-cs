@@ -208,5 +208,19 @@ namespace PeculiarVentures.ACME.Server.AspNet
 
             return CreateHttpResponseMessage(response);
         }
+
+        public virtual HttpResponseMessage GetTemplates([FromBody]JsonWebSignature token)
+        {
+            var response = Controller.GetTemplates(GetAcmeRequest(token));
+
+            return CreateHttpResponseMessage(response);
+        }
+
+        public virtual HttpResponseMessage GetExchangeItem([FromBody]JsonWebSignature token)
+        {
+            var response = Controller.GetExchangeItem(GetAcmeRequest(token));
+
+            return CreateHttpResponseMessage(response);
+        }
     }
 }

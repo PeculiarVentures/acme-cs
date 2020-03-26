@@ -53,7 +53,7 @@ namespace PeculiarVentures.ACME.Protocol
             var error = new Error
             {
                 Type = exception.Type,
-                Detail = exception.StackTrace,
+                Detail = exception.Message,
                 //#if DEBUG
                 Stack = exception.StackTrace,
                 //#endif

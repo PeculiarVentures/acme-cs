@@ -13,7 +13,6 @@
     <ProjectReference Include="..\ACME.Server.Data.Abstractions\ACME.Server.Data.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Services\" />
     <Folder Include="DependencyInjection\" />
     <Folder Include="Controllers\" />
   </ItemGroup>

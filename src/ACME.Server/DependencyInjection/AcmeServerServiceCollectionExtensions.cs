@@ -20,7 +20,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IAuthorizationService, AuthorizationService>()
                 .AddTransient<IChallengeService, ChallengeService>()
                 .AddTransient<IAccountService, AccountService>()
-                .AddTransient<IExternalAccountService, ExternalAccountService>();
+                .AddTransient<IExternalAccountService, ExternalAccountService>()
+                .AddTransient<ICertificateEnrollmentService, DefaultCertificateEnrollmentService>()
+                .AddTransient<ITemplateService, DefaultTemplateService>();
 
         }
     }

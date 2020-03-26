@@ -21,6 +21,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             IChallengeService challengeService,
             IAuthorizationService authorizationService,
             IConverterService converterService,
+            ITemplateService templateService,
             IOptions<ServerOptions> options)
         {
             DirectoryService = directoryService ?? throw new ArgumentNullException(nameof(directoryService));
@@ -30,6 +31,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             ChallengeService = challengeService ?? throw new ArgumentNullException(nameof(challengeService));
             AuthorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));
             ConverterService = converterService ?? throw new ArgumentNullException(nameof(converterService));
+            TemplateService = templateService ?? throw new ArgumentNullException(nameof(templateService));
             Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
@@ -40,6 +42,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         public IChallengeService ChallengeService { get; }
         public IAuthorizationService AuthorizationService { get; }
         public IConverterService ConverterService { get; }
+        public ITemplateService TemplateService { get; }
         public ServerOptions Options { get; }
 
         public AcmeResponse CreateResponse()
@@ -146,7 +149,12 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 // Invoke action
                 action.Invoke(response);
             }
-
+            catch (AcmeException e)
+            {
+                response.StatusCode = (int)e.StatusCode;
+                Error error = e;
+                response.Content = error;
+            }
             catch (Exception e)
             {
                 response.StatusCode = 500; // Internal Server Error
@@ -186,7 +194,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         /// <exception cref="MalformedException"/>
         public int GetIdFromLink(string url)
         {
-            var regEx = new Regex("\\/(\\d+)");
+            var regEx = new Regex("\\/(\\d+)$");
             var match = regEx.Match(url);
             if (!match.Success)
             {
@@ -369,7 +377,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 var account = GetAccount(request.KeyId);
                 var @params = request.GetContent<NewOrder>();
 
-                var order = OrderService.GetActual(account.Id, @params.Identifiers.ToArray());
+                var order = OrderService.GetActual(account.Id, @params);
                 if (order == null)
                 {
                     order = OrderService.Create(account.Id, @params);
@@ -485,6 +493,15 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
+        public AcmeResponse GetTemplates(AcmeRequest request)
+        {
+            return WrapAction((response) =>
+            {
+                var account = GetAccount(request.KeyId);
+                response.Content = TemplateService.GetTemplates(account.Id);
+            }, request);
+        }
+
         public AcmeResponse RevokeCertificate(AcmeRequest request)
         {
             return WrapAction((response) =>
@@ -499,6 +516,16 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 {
                     OrderService.RevokeCertificate(request.Key, @params);
                 }
+            }, request);
+        }
+
+        public AcmeResponse GetExchangeItem(AcmeRequest request)
+        {
+            return WrapAction((response) =>
+            {
+                var account = GetAccount(request.KeyId);
+                var exchangeItem = OrderService.GetExchangeItem(account.Id);
+                response.Content = ConverterService.ToExchangeItem(exchangeItem);
             }, request);
         }
     }

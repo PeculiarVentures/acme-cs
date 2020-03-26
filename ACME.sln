@@ -22,9 +22,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{7CBA008D-5
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{1C4AE270-EBB6-44BD-AE9B-B76CB688E688}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ACME.Server.Data.Abstractions", "src\ACME.Server.Data.Abstractions\ACME.Server.Data.Abstractions.csproj", "{971BA84D-4344-48AE-9F52-940976C25967}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACME.Server.Data.Abstractions", "src\ACME.Server.Data.Abstractions\ACME.Server.Data.Abstractions.csproj", "{971BA84D-4344-48AE-9F52-940976C25967}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ACME.Server.Data.Memory", "src\ACME.Server.Data.Memory\ACME.Server.Data.Memory.csproj", "{0D73A9BB-EB8F-4B53-AD84-052AD565B4C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACME.Server.Data.Memory", "src\ACME.Server.Data.Memory\ACME.Server.Data.Memory.csproj", "{0D73A9BB-EB8F-4B53-AD84-052AD565B4C4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ACME.Client.Tests", "tests\ACME.Client.Tests\ACME.Client.Tests.csproj", "{452610AE-95B6-497C-9B5A-533028DDE37D}"
 EndProject
@@ -34,7 +34,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACME.Server.AspNet", "src\A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACME.Server.Data.EF.Core", "src\ACME.Server.Data.EF.Core\ACME.Server.Data.EF.Core.csproj", "{E1702CFB-0E3E-44A4-B3E2-C2C1E60E600B}"
 EndProject
-Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "ACME.Server.Data.Memory.Tests", "tests\ACME.Server.Data.Memory.Tests\ACME.Server.Data.Memory.Tests.csproj", "{8D0B88D9-6004-4B92-9AD7-55694A2B4F25}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACME.Server.Data.Memory.Tests", "tests\ACME.Server.Data.Memory.Tests\ACME.Server.Data.Memory.Tests.csproj", "{8D0B88D9-6004-4B92-9AD7-55694A2B4F25}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

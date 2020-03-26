@@ -67,5 +67,18 @@ namespace PeculiarVentures.ACME.Protocol
         [JsonProperty("meta")]
         public DirectoryMetadata Meta { get; set; }
 
+        /// <summary>
+        /// Templates
+        /// </summary>
+        /// gsGetTemplates (optional, string)
+        [JsonProperty("gsGetTemplates")]
+        public string GsGetTemplates { get; set; }
+
+        /// <summary>
+        /// Exchange item
+        /// </summary>
+        /// gsGetExchange (optional, string)
+        [JsonProperty("gsGetExchange")]
+        public string GsGetExchange { get; set; }
     }
 }

@@ -47,5 +47,7 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         ICertificate Certificate { get; set; }
 
         int AccountId { get; set; }
+
+        string TemplateId { get; set; }
     }
 }
