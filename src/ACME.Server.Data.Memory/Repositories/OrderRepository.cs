@@ -36,11 +36,5 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
             return Items
                 .FirstOrDefault(o => o.Certificate != null && o.Certificate.Thumbprint.Equals(thumbprint, StringComparison.CurrentCultureIgnoreCase));
         }
-
-        public IOrder LastByTemplate(int accountId, string templateId)
-        {
-            return Items
-                .LastOrDefault(o => o.AccountId == accountId && o.TemplateId == templateId);
-        }
     }
 }

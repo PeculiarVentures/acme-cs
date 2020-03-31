@@ -79,14 +79,5 @@ namespace AspNetCore.Server.Services
         {
             // nothing
         }
-
-        public IExchangeItem GetExchangeItem(IAccount account)
-        {
-            return new PeculiarVentures.ACME.Server.Data.Memory.Models.ExchangeItem
-            {
-                Key = Options.ExtraCertificateStorage[0].PublicKey.Key,
-                //Certificates = Options.ExtraCertificateStorage,
-            };
-        }
     }
 }

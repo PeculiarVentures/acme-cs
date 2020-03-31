@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Protocol;
+using PeculiarVentures.ACME.Protocol.Messages;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 using PeculiarVentures.ACME.Web;
@@ -35,113 +36,257 @@ namespace PeculiarVentures.ACME.Server.Services
         private IChallengeRepository ChallengeRepository { get; }
         private IOrderAuthorizationRepository OrderAuthorizationRepository { get; }
 
+        #region Account
+        /// <summary>
+        /// Connverts IAccount to JSON account
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public Account ToAccount(IAccount data)
         {
-            var account = new Account
-            {
-                Id = data.Id,
-                Contacts = data.Contacts.ToArray(),
-                Status = data.Status,
-                TermsOfServiceAgreed = data.TermsOfServiceAgreed,
-                Key = data.Key,
-                CreatedAt = data.CreatedAt,
-            };
-            if(data.ExternalAccountId != null)
-            {
-                account.ExternalAccountBinding = ExternalAccountRepository.GetById(data.ExternalAccountId.Value).Account;
-            }
-            return account;
+            var result = OnToAccountBefore(data);
+            return OnToAccountConvert(result, data);
         }
 
+        /// <summary>
+        /// Creates empty JSON Account
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        protected virtual Account OnToAccountBefore(IAccount source)
+        {
+            return new Account();
+        }
+
+        /// <summary>
+        /// Assign values from IAccount to JSON account.
+        /// For expended objects need add assign values
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="data"></param>
+        protected virtual Account OnToAccountConvert(Account order, IAccount data)
+        {
+            order.Id = data.Id;
+            order.Contacts = data.Contacts.ToArray();
+            order.Status = data.Status;
+            order.TermsOfServiceAgreed = data.TermsOfServiceAgreed;
+            order.Key = data.Key;
+            order.CreatedAt = data.CreatedAt;
+            if (data.ExternalAccountId != null)
+            {
+                order.ExternalAccountBinding = ExternalAccountRepository.GetById(data.ExternalAccountId.Value).Account;
+            }
+            return order;
+        }
+        #endregion
+
+        #region Challenge
+        /// <summary>
+        /// Connverts IChallenge to JSON challenge
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public Challenge ToChallenge(IChallenge data)
         {
-            return new Challenge
-            {
-                Status = data.Status,
-                Type = data.Type,
-                Validated = data.Validated,
-                Error = data.Error != null ? ToError(data.Error) : null,
-                Token = data.Token,
-                Url = data.Id.ToString(),
-            };
+            var result = OnToChallengeBefore(data);
+            return OnToChallengeConvert(result, data);
         }
 
+        /// <summary>
+        /// Creates empty JSON Challenge
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected virtual Challenge OnToChallengeBefore(IChallenge data)
+        {
+            return new Challenge();
+        }
+
+        /// <summary>
+        /// Assign values from IChallenge to JSON challenge.
+        /// For expended objects need add assign values  
+        /// </summary>
+        /// <param name="chall"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected virtual Challenge OnToChallengeConvert(Challenge chall, IChallenge data)
+        {
+            chall.Status = data.Status;
+            chall.Type = data.Type;
+            chall.Validated = data.Validated;
+            chall.Error = data.Error != null ? ToError(data.Error) : null;
+            chall.Token = data.Token;
+            chall.Url = data.Id.ToString();
+            return chall;
+        }
+        #endregion
+
+        #region Error
+        /// <summary>
+        /// Connverts IError to JSON error
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public Error ToError(IError data)
         {
-            return new Error
-            {
-                Detail = data.Detail,
-                Type = data.Type,
-                SubProblems = data.SubProblems.Select(o => ToError(o)).ToArray(),
-            };
+            var result = OnToErrorBefore(data);
+            return OnToErrorConvert(result, data);
         }
 
+        /// <summary>
+        /// Creates empty JSON Error
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected virtual Error OnToErrorBefore(IError data)
+        {
+            return new Error();
+        }
+
+        /// <summary>
+        /// Assign values from IError to JSON error.
+        /// For expended objects need add assign values   
+        /// </summary>
+        /// <param name="err"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected virtual Error OnToErrorConvert(Error err, IError data)
+        {
+            err.Detail = data.Detail;
+            err.Type = data.Type;
+            err.SubProblems = data.SubProblems.Select(o => ToError(o)).ToArray();
+            return err;
+        }
+        #endregion
+
+        #region Authorization
+        /// <summary>
+        /// Connverts IAuthorization to JSON authorization
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public Authorization ToAuthorization(IAuthorization data)
         {
             var challenges = ChallengeRepository.GetByAuthorization(data.Id);
-            return new Authorization
-            {
-                Expires = data.Expires,
-                Identifier = new Identifier
-                {
-                    Type = data.Identifier.Type,
-                    Value = data.Identifier.Value,
-                },
-                Status = data.Status,
-                Wildcard = data.Wildcard,
-                Challenges = challenges.Select(o =>
-                    ToChallenge(o))
-                    .ToList(),
-            };
+            var result = OnToAuthorizationBefore(data);
+            return OnToAuthorizationConvert(result, data, challenges);
         }
 
+        /// <summary>
+        /// Creates empty JSON Authorization
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected virtual Authorization OnToAuthorizationBefore(IAuthorization data)
+        {
+            return new Authorization();
+        }
+
+        /// <summary>
+        /// Assign values from IAuthorization to JSON authorization.
+        /// For expended objects need add assign values  
+        /// </summary>
+        /// <param name="auth"></param>
+        /// <param name="data"></param>
+        /// <param name="chall"></param>
+        /// <returns></returns>
+        protected virtual Authorization OnToAuthorizationConvert(Authorization auth, IAuthorization data, IChallenge[] chall)
+        {
+            auth.Expires = data.Expires;
+            auth.Identifier = new Identifier
+            {
+                Type = data.Identifier.Type,
+                Value = data.Identifier.Value,
+            };
+            auth.Status = data.Status;
+            auth.Wildcard = data.Wildcard;
+            auth.Challenges = chall.Select(o =>
+                ToChallenge(o))
+                .ToList();
+            return auth;
+        }
+        #endregion
+
+        #region Order
+        /// <summary>
+        /// Connverts IOrder to JSON order
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public Order ToOrder(IOrder data)
         {
             var authzs = OrderAuthorizationRepository.GetByOrder(data.Id)
                 .Select(o => AuthorizationRepository.GetById(o.AuthorizationId))
                 .ToArray();
 
-            var order = new Order
-            {
-                Identifiers = authzs.Select(o =>
-                    new Identifier(o.Identifier.Type, o.Identifier.Value)).ToArray(),
-                Authorizations = authzs.Select(o => $"{o.Id}").ToArray(),
-                Status = data.Status,
-                NotBefore = data.NotBefore,
-                NotAfter = data.NotAfter,
-                Expires = data.Expires,
-                Error = data.Error == null ? null : ToError(data.Error),
-                Finalize = $"{data.Id}",
-                Template = data.TemplateId == null 
-                    ? null 
-                    : new Uri(new Uri(Options.BaseAddress), $"template/{data.TemplateId}").ToString(),
-                Certificate = data.Certificate?.RawData == null ? null : $"{data.Certificate.Thumbprint}"
-            };
+            var order = OnToOrderConvertBefore(data);
 
+            return OnToOrderConvert(order, data, authzs);
+        }
+
+        /// <summary>
+        /// Creates empty JSON Order
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        protected virtual Order OnToOrderConvertBefore(IOrder source)
+        {
+            return new Order();
+        }
+
+        /// <summary>
+        /// Assign values from IOrder to JSON order.
+        /// For expended objects need add assign values   
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="data"></param>
+        /// <param name="authzs"></param>
+        /// <returns></returns>
+        protected virtual Order OnToOrderConvert(Order order, IOrder data, IAuthorization[] authzs)
+        {
+            order.Identifiers = authzs.Select(o =>
+                    new Identifier(o.Identifier.Type, o.Identifier.Value)).ToArray();
+            order.Authorizations = authzs.Select(o => $"{o.Id}").ToArray();
+            order.Status = data.Status;
+            order.NotBefore = data.NotBefore;
+            order.NotAfter = data.NotAfter;
+            order.Expires = data.Expires;
+            order.Error = data.Error == null ? null : ToError(data.Error);
+            order.Finalize = $"{data.Id}";
+            order.Certificate = data.Certificate?.RawData == null ? null : $"{data.Certificate.Thumbprint}";
             return order;
         }
+        #endregion
 
-        public ExchangeItem ToExchangeItem(IExchangeItem exchangeItem)
+        #region TypeConvert
+        /// <summary>
+        /// Dictionary extended types
+        /// </summary>
+        protected Dictionary<Type, Type> Types { get; } = new Dictionary<Type, Type>();
+
+        /// <summary>
+        /// Returns type from Types by key
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public Type GetType(Type type)
         {
-            if (exchangeItem.Key != null)
+            if (Types.TryGetValue(type, out Type result))
             {
-                return new ExchangeItem
-                {
-                    Key = new JsonWebKey(exchangeItem.Key),
-                };
-            } else if (exchangeItem.Certificates != null)
-            {
-                var list = new List<X509Certificate2>();
-                foreach (var cert in exchangeItem.Certificates)
-                {
-                    list.Add(cert);
-                }
-                return new ExchangeItem
-                {
-                    CertificateChain = list.Select(o => Convert.ToBase64String(o.RawData)).ToArray(),
-                };
+                return result;
             }
-            throw new MalformedException($"Bad value of {nameof(IExchangeItem)}");
+            return type;
         }
+
+        /// <summary>
+        /// Returns type from Types by key
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public Type GetType<T>()
+        {
+            return GetType(typeof(T));
+        }
+        #endregion
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -26,6 +27,37 @@ namespace PeculiarVentures.ACME.Client
         public string Nonce { get; set; }
 
         public string Location { get; set; }
+
+        #region TypeConvert
+        /// <summary>
+        /// Dictionary extended types
+        /// </summary>
+        protected Dictionary<Type, Type> Types { get; } = new Dictionary<Type, Type>();
+
+        /// <summary>
+        /// Returns type from Types by key
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public Type GetType(Type type)
+        {
+            if (Types.TryGetValue(type, out Type result))
+            {
+                return result;
+            }
+            return type;
+        }
+
+        /// <summary>
+        /// Returns type from Types by key
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public Type GetType<T>()
+        {
+            return GetType(typeof(T));
+        }
+        #endregion
 
         protected AcmeClient(HttpClient http, AsymmetricAlgorithm key, ILogger logger = null)
         {
@@ -105,21 +137,18 @@ namespace PeculiarVentures.ACME.Client
 
             if (!response.IsSuccessStatusCode)
             {
-                string message = null;
-                Protocol.Error error = null;
+                AcmeException ex;
 
                 if (Protocol.MediaTypeHeader.ProblemJsonContentTypeHeaderValue.Equals(response.Content?.Headers?.ContentType))
                 {
-                    error = await Deserialize<Protocol.Error>(response);
-                    message = error.Detail;
+                    var error = await Deserialize<Protocol.Error>(response);
+                    ex = new AcmeException(error.Type, error.Detail);
                 }
-
-                if (string.IsNullOrEmpty(message))
+                else
                 {
-                    message = $"Unexpected response status code [{response.StatusCode}].";
+                    Console.WriteLine(await response.Content.ReadAsStringAsync());
+                    ex = new AcmeException(Protocol.ErrorType.ServerInternal, $"Unexpected response status code [{response.StatusCode}].", response.StatusCode);
                 }
-
-                var ex = new AcmeException(error.Type, message, error);
 
                 _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 
@@ -134,6 +163,34 @@ namespace PeculiarVentures.ACME.Client
             }
 
             return response;
+        }
+
+        protected async Task<AcmeResponse> Request(
+            Type type,
+            string url,
+            HttpMethod method = null,
+            object payload = null,
+            bool includePublicKey = false
+        )
+        {
+            var response = await Request(url, method, payload, includePublicKey);
+
+            response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
+            response.Headers.TryGetValues("location", out var locationValues);
+            response.Headers.TryGetValues("links", out var linksValues);
+
+            var acmeResponse = new AcmeResponse
+            {
+                StatusCode = (int)response.StatusCode,
+                ReplayNonce = replayNonceValues?.FirstOrDefault(),
+                Location = locationValues?.FirstOrDefault(),
+                Links = linksValues != null ? new LinkHeaderCollection(linksValues.ToArray()) : null,
+                Content = await Deserialize(response, type),
+            };
+
+            _logger?.LogDebug($"{nameof(AcmeClient)} response: \n{acmeResponse}");
+
+            return acmeResponse;
         }
 
         protected async Task<AcmeResponse<T>> Request<T>(
@@ -163,11 +220,16 @@ namespace PeculiarVentures.ACME.Client
             return acmeResponse;
         }
 
-        protected async Task<T> Deserialize<T>(HttpResponseMessage response)
+        protected async Task<object> Deserialize(HttpResponseMessage response, Type type)
         {
             var content = await response.Content.ReadAsStringAsync();
 
-            return JsonConvert.DeserializeObject<T>(content);
+            return JsonConvert.DeserializeObject(content, type);
+        }
+
+        protected async Task<T> Deserialize<T>(HttpResponseMessage response)
+        {
+            return (T)(await Deserialize(response, typeof(T)));
         }
 
         /// <summary>
@@ -176,9 +238,9 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.1"/>
         public async Task<AcmeResponse<Protocol.Directory>> DirectoryGetAsync()
         {
-            var response = await Request<Protocol.Directory>("directory");
+            var response = await Request(GetType(typeof(Protocol.Directory)), "directory");
 
-            Directory = response.Content;
+            Directory = (Protocol.Directory)response.Content;
 
             return response;
         }
@@ -198,7 +260,7 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountCreateAsync(Protocol.Messages.NewAccount account)
         {
-            var response = await Request<Protocol.Account>(Directory.NewAccount, HttpMethod.Post, account, true);
+            var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount, HttpMethod.Post, account, true);
 
             if (string.IsNullOrEmpty(response.Location))
             {
@@ -249,7 +311,7 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.4"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountUpdateAsync(Protocol.Messages.NewAccount account)
         {
-            var response = await Request<Protocol.Account>(Location, HttpMethod.Post, account);
+            var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount, HttpMethod.Post, account);
 
             if (string.IsNullOrEmpty(response.Location))
             {
@@ -288,7 +350,7 @@ namespace PeculiarVentures.ACME.Client
             });
             jws.Sign(keyNew);
 
-            var response = await Request<Protocol.Account>(Directory.KeyChange, HttpMethod.Post, jws);
+            var response = await Request(GetType(typeof(Protocol.Account)), Directory.KeyChange, HttpMethod.Post, jws);
 
             Key = keyNew;
 
@@ -301,7 +363,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.7"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountDeactivateAsync()
         {
-            return await Request<Protocol.Account>(
+            return await Request(
+                GetType(typeof(Protocol.Account)),
                 Location,
                 HttpMethod.Post,
                 new Protocol.Account { Status = Protocol.AccountStatus.Deactivated }
@@ -315,7 +378,7 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3"/>
         public async Task<AcmeResponse<Protocol.Order>> OrderCreateAsync(Protocol.Messages.NewOrder order)
         {
-            return await Request<Protocol.Order>(Directory.NewOrder, HttpMethod.Post, order);
+            return await Request(GetType(typeof(Protocol.Order)), Directory.NewOrder, HttpMethod.Post, order);
         }
 
         /// <summary>
@@ -325,7 +388,7 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3"/>
         public async Task<AcmeResponse<Protocol.Order>> OrderGetAsync(string orderUrl)
         {
-            return await Request<Protocol.Order>(orderUrl, HttpMethod.Post, "");
+            return await Request(GetType(typeof(Protocol.Order)), orderUrl, HttpMethod.Post, "");
         }
 
         /// <summary>
@@ -345,7 +408,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.4"/>
         public async Task<AcmeResponse<Protocol.Order>> OrderFinalizeAsync(string orderUrl, Protocol.Messages.FinalizeOrder finalizeOrder)
         {
-            return await Request<Protocol.Order>(
+            return await Request(
+                GetType(typeof(Protocol.Order)),
                 orderUrl,
                 HttpMethod.Post,
                 finalizeOrder
@@ -359,7 +423,7 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.4"/>
         public async Task<AcmeResponse<Protocol.Authorization>> AuthorizationCreateAsync(string authorizationUrl)
         {
-            return await Request<Protocol.Authorization>(authorizationUrl, HttpMethod.Post, "");
+            return await Request(GetType(typeof(Protocol.Authorization)), authorizationUrl, HttpMethod.Post, "");
         }
 
         /// <summary>
@@ -368,7 +432,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5.2"/>
         public async Task<AcmeResponse<Protocol.Authorization>> AuthorizationDeactivateAsync(string authorizationUrl)
         {
-            return await Request<Protocol.Authorization>(
+            return await Request(
+                GetType(typeof(Protocol.Authorization)),
                 authorizationUrl,
                 HttpMethod.Post,
                 new Protocol.Authorization
@@ -384,7 +449,7 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5.1"/>
         public async Task<AcmeResponse<Protocol.Challenge>> ChallengeValidateAsync(string challengeUrl)
         {
-            return await Request<Protocol.Challenge>(challengeUrl, HttpMethod.Post, new { });
+            return await Request(GetType(typeof(Protocol.Challenge)), challengeUrl, HttpMethod.Post, new { });
         }
 
         /// <summary>
@@ -393,7 +458,7 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5.1"/>
         public async Task<AcmeResponse<Protocol.Challenge>> ChallengeGetAsync(string challengeUrl)
         {
-            return await Request<Protocol.Challenge>(challengeUrl, HttpMethod.Post, "");
+            return await Request(GetType(typeof(Protocol.Challenge)), challengeUrl, HttpMethod.Post, "");
         }
 
         /// <summary>

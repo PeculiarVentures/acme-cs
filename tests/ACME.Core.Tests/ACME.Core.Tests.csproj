@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
 
     <IsPackable>false</IsPackable>
     <RootNamespace>PeculiarVentures.ACME</RootNamespace>
@@ -21,14 +21,20 @@
 
   <ItemGroup>
     <Compile Remove="UnitTest1.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\ACME.Core\ACME.Core.csproj" />
+    <Compile Remove="Web\Jwe\Crypto\AesCbcHmacMechanismTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Web\" />
     <Folder Include="Web\Http\" />
     <Folder Include="Helpers\" />
     <Folder Include="Cryptography\" />
+    <Folder Include="Web\Jwe\" />
+    <Folder Include="Web\Jwe\Crypto\" />
+    <Folder Include="Web\Jwa\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ACME.Core\ACME.Core.csproj">
+      <ReferenceSourceTarget>ProjectReference</ReferenceSourceTarget>
+    </ProjectReference>
   </ItemGroup>
 </Project>

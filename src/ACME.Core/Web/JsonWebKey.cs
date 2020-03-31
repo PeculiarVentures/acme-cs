@@ -325,6 +325,21 @@ namespace PeculiarVentures.ACME.Web
 
         public void SetHmacKey(HMAC key)
         {
+            switch (key.HashSize)
+            {
+                case 256:
+                    Algorithm = AlgorithmsEnum.HS256;
+                    break;
+                case 384:
+                    Algorithm = AlgorithmsEnum.HS384;
+                    break;
+                case 512:
+                    Algorithm = AlgorithmsEnum.HS512;
+                    break;
+                default:
+                    throw new CryptographicException($"Unsupported hash size '{key.HashSize}'");
+            }
+
             KeyType = KeyTypesEnum.OctetSequence;
             KeyValue = Base64Url.Encode(key.Key);
         }

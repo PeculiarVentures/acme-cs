@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>GlobalSign.ACME</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Protocol\" />
+    <Folder Include="Protocol\Messages\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="GlobalSign.ACME.Server.Data.EF.Core\obj\GlobalSign.ACME.Server.Data.EF.Core.csproj.nuget.dgspec.json" />
+    <None Remove="GlobalSign.ACME.Server.Data.EF.Core\obj\Debug\netstandard2.0\GlobalSign.ACME.Server.Data.EF.Core.assets.cache" />
+    <None Remove="GlobalSign.ACME.Server.Data.EF.Core\obj\Debug\netstandard2.0\GlobalSign.ACME.Server.Data.EF.Core.csprojAssemblyReference.cache" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ACME.Core\ACME.Core.csproj" />
+  </ItemGroup>
+</Project>

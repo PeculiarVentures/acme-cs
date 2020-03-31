@@ -32,7 +32,6 @@ namespace PeculiarVentures.ACME.Server.Services
             IAccountService accountService,
             IAuthorizationService authorizationService,
             IOrderAuthorizationRepository orderAuthorizationRepository,
-            ITemplateService templateService,
             ICertificateEnrollmentService certificateEnrollmentService,
             IOptions<ServerOptions> options)
             : base(options)
@@ -45,8 +44,6 @@ namespace PeculiarVentures.ACME.Server.Services
                 ?? throw new ArgumentNullException(nameof(authorizationService));
             OrderAuthorizationRepository = orderAuthorizationRepository
                 ?? throw new ArgumentNullException(nameof(orderAuthorizationRepository));
-            TemplateService = templateService
-                ?? throw new ArgumentNullException(nameof(templateService));
             CertificateEnrollmentService = certificateEnrollmentService
                 ?? throw new ArgumentNullException(nameof(certificateEnrollmentService));
         }
@@ -55,7 +52,6 @@ namespace PeculiarVentures.ACME.Server.Services
         public IAccountService AccountService { get; }
         public IAuthorizationService AuthorizationService { get; }
         public IOrderAuthorizationRepository OrderAuthorizationRepository { get; }
-        public ITemplateService TemplateService { get; }
         public ICertificateEnrollmentService CertificateEnrollmentService { get; }
         public ICertificateEnrollmentService GetCertificateEnrollmentService { get; }
 
@@ -70,6 +66,12 @@ namespace PeculiarVentures.ACME.Server.Services
             return Base64Url.Encode(hash);
         }
 
+        /// <summary>
+        /// Creats new account
+        /// </summary>
+        /// <param name="accountId"></param>
+        /// <param name="params"></param>
+        /// <returns></returns>
         public IOrder Create(int accountId, NewOrder @params)
         {
             #region Check arguments
@@ -80,45 +82,64 @@ namespace PeculiarVentures.ACME.Server.Services
             #endregion
 
             var order = OrderRepository.Create();
+            OnCreateParams(order, @params, accountId);
+            order = OrderRepository.Add(order);
+            OnCreatAuth(order, @params);
+            order.Identifier = ComputerIdentifier(@params.Identifiers.ToArray(), IDENTIFIER_HASH);
+            order = OrderRepository.Update(order);
+            return order;
+        }
 
+        /// <summary>
+        /// Fills parameters
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="params"></param>
+        /// <param name="accountId"></param>
+        /// <returns></returns>
+        protected virtual void OnCreateParams(IOrder order, NewOrder @params, int accountId)
+        {
             order.AccountId = accountId;
             order.NotBefore = @params.NotBefore;
             order.NotAfter = @params.NotAfter;
+        }
 
-            order = OrderRepository.Add(order);
+        /// <summary>
+        /// Finds and creats authorizations for order
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="params"></param>
+        protected virtual void OnCreatAuth(IOrder order, NewOrder @params)
+        {
+            var listDate = new List<DateTime>();
+            foreach (var identifier in @params.Identifiers)
+            {
+                var authz = AuthorizationService.GetActual(order.AccountId, identifier)
+                    ?? AuthorizationService.Create(order.AccountId, identifier);
 
-            if (@params.GsTemplate != null)
-            {
-                // Ignore Identifiers if Template presents
-                TemplateService.GetById(accountId, @params.GsTemplate);
-                order.TemplateId = @params.GsTemplate;
-                order.Expires = DateTime.UtcNow.AddDays(Options.ExpireAuthorizationDays);
-                order.Status = OrderStatus.Ready;
-            }
-            else
-            {
-                var listDate = new List<DateTime>();
-                foreach (var identifier in @params.Identifiers)
+                var orderAuthz = OrderAuthorizationRepository.Create(order.Id, authz.Id);
+                OrderAuthorizationRepository.Add(orderAuthz);
+
+                if (authz.Expires != null)
                 {
-                    var authz = AuthorizationService.GetActual(accountId, identifier)
-                        ?? AuthorizationService.Create(accountId, identifier);
-
-                    var orderAuthz = OrderAuthorizationRepository.Create(order.Id, authz.Id);
-                    OrderAuthorizationRepository.Add(orderAuthz);
-
-                    if (authz.Expires != null)
-                    {
-                        listDate.Add(authz.Expires.Value);
-                    }
+                    listDate.Add(authz.Expires.Value);
                 }
-                // set min expiration date from authorizations
-                order.Expires = listDate.Min(o => o);
             }
+            // set min expiration date from authorizations
+            order.Expires = listDate.Min(o => o);
+        }
 
-            order.Identifier = ComputerIdentifier(@params.Identifiers.ToArray(), IDENTIFIER_HASH);
-            OrderRepository.Update(order);
+        protected virtual object OnEnrollCertificateBefore(IOrder order, FinalizeOrder @params)
+        {
+            return null;
+        }
 
-            return order;
+        protected virtual void OnEnrollCertificateTask(IOrder order, FinalizeOrder @params, object result) { }
+
+        protected virtual IOrder OnGetActualCheckBefore(NewOrder @params, int accountId)
+        {
+            // Gets order from repository
+            return LastByIdentifiers(accountId, @params.Identifiers.ToArray());
         }
 
         public IOrder EnrollCertificate(int accountId, int orderId, FinalizeOrder @params)
@@ -135,19 +156,7 @@ namespace PeculiarVentures.ACME.Server.Services
             order.Status = OrderStatus.Processing;
             OrderRepository.Update(order);
 
-            AsymmetricAlgorithm key = null;
-            if (order.TemplateId != null)
-            {
-                var template = TemplateService.GetById(accountId, order.TemplateId);
-                if (template.Requirements.Archival?.Algorithm != null)
-                {
-                    if (@params.ArchivedKey == null)
-                    {
-                        throw new MalformedException("Archived key is required");
-                    }
-                    key = DecryptArchivedKey(@params.ArchivedKey);
-                }
-            }
+            var result = OnEnrollCertificateBefore(order, @params);
 
             Task
                 .Run(async () =>
@@ -159,10 +168,8 @@ namespace PeculiarVentures.ACME.Server.Services
                     order.Certificate = OrderRepository.CreateCertificate(certificate);
                     OrderRepository.Update(order);
 
-                    if (key != null)
-                    {
-                        CertificateEnrollmentService.ArchiveKey(order, key);
-                    }
+                    OnEnrollCertificateTask(order, @params, result);
+
                 })
                 .ContinueWith(t =>
                 {
@@ -221,16 +228,8 @@ namespace PeculiarVentures.ACME.Server.Services
             }
             #endregion
 
-            IOrder order = null;
-            if (@params.GsTemplate != null)
-            {
-                order = OrderRepository.LastByTemplate(accountId, @params.GsTemplate);
-            }
-            else
-            {
-                // Gets order from repository
-                order = LastByIdentifiers(accountId, @params.Identifiers.ToArray());
-            }
+            IOrder order = OnGetActualCheckBefore(@params, accountId);
+
             if (!(order == null || order.Status == OrderStatus.Invalid))
             {
                 // Checks expires
@@ -342,10 +341,5 @@ namespace PeculiarVentures.ACME.Server.Services
             OrderRepository.Update(order);
         }
 
-        public IExchangeItem GetExchangeItem(int accountId)
-        {
-            var account = AccountService.GetById(accountId);
-            return CertificateEnrollmentService.GetExchangeItem(account);
-        }
     }
 }

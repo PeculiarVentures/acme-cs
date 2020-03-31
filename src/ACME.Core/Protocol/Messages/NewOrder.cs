@@ -30,11 +30,5 @@ namespace PeculiarVentures.ACME.Protocol.Messages
         [JsonConverter(typeof(DateTimeFormatConverter))]
         [JsonProperty("notAfter")]
         public DateTime? NotAfter { get; set; }
-
-        /// <summary>
-        /// Template identifier (GlobalSign)
-        /// </summary>
-        [JsonProperty("gsTemplate")]
-        public string GsTemplate { get; set; }
     }
 }

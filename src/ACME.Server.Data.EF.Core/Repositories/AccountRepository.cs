@@ -17,16 +17,6 @@ namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
 
         public override DbSet<Account> Records => Context.Accounts;
 
-        public IAccount Create(JsonWebKey key, NewAccount @params)
-        {
-            return new Account
-            {
-                Key = key,
-                Contacts = @params.Contacts,
-                TermsOfServiceAgreed = @params.TermsOfServiceAgreed ?? false,
-            };
-        }
-
         public IAccount FindByPublicKey(JsonWebKey publicKey)
         {
             var thumbprint = Base64Url.Encode(publicKey.GetThumbprint());

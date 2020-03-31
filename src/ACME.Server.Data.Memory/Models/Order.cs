@@ -14,6 +14,5 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Models
         public int AccountId { get; set; }
         public ICertificate Certificate { get; set; }
         public string Identifier { get; set; }
-        public string TemplateId { get; set; }
     }
 }

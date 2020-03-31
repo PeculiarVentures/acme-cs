@@ -25,20 +25,31 @@ namespace PeculiarVentures.ACME.Server.Services
         public virtual IAuthorization Create(int accountId, Identifier identifier)
         {
             var authz = AuthorizationRepository.Create();
-            authz.Identifier.Type = identifier.Type;
-            authz.Identifier.Value = identifier.Value;
-            authz.Expires = DateTime.UtcNow.AddDays(Options.ExpireAuthorizationDays); 
-            authz.AccountId = accountId;
-            authz.Status = AuthorizationStatus.Pending;
+            OnCreateParams(authz, accountId, identifier);
+
 
             var addedAuthz = AuthorizationRepository.Add(authz);
-
             // Add challenges
             var http = ChallengeService.Create(addedAuthz.Id, "http-01");
             //var tls = ChallengeService.Create(addedAuthz.Id, "tls-01");
             //var dns = ChallengeService.Create(addedAuthz.Id, "dns-01");
 
             return addedAuthz;
+        }
+
+        /// <summary>
+        /// Fills parameters
+        /// </summary>
+        /// <param name="authz"></param>
+        /// <param name="accountId"></param>
+        /// <param name="identifier"></param>
+        protected virtual void OnCreateParams(IAuthorization authz, int accountId, Identifier identifier)
+        {
+            authz.Identifier.Type = identifier.Type;
+            authz.Identifier.Value = identifier.Value;
+            authz.AccountId = accountId;
+            authz.Status = AuthorizationStatus.Pending;
+            authz.Expires = DateTime.UtcNow.AddDays(Options.ExpireAuthorizationDays);
         }
 
         public IAuthorization GetActual(int accountId, Identifier identifier)

@@ -21,7 +21,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
             IChallengeService challengeService,
             IAuthorizationService authorizationService,
             IConverterService converterService,
-            ITemplateService templateService,
             IOptions<ServerOptions> options)
         {
             DirectoryService = directoryService ?? throw new ArgumentNullException(nameof(directoryService));
@@ -31,7 +30,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
             ChallengeService = challengeService ?? throw new ArgumentNullException(nameof(challengeService));
             AuthorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));
             ConverterService = converterService ?? throw new ArgumentNullException(nameof(converterService));
-            TemplateService = templateService ?? throw new ArgumentNullException(nameof(templateService));
             Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
@@ -42,7 +40,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
         public IChallengeService ChallengeService { get; }
         public IAuthorizationService AuthorizationService { get; }
         public IConverterService ConverterService { get; }
-        public ITemplateService TemplateService { get; }
         public ServerOptions Options { get; }
 
         public AcmeResponse CreateResponse()
@@ -228,7 +225,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction(response =>
             {
-                var @params = request.GetContent<NewAccount>();
+                var @params = (NewAccount)request.GetContent(ConverterService.GetType<NewAccount>());
                 var account = AccountService.FindByPublicKey(request.Key);
 
                 if (@params.OnlyReturnExisting == true)
@@ -262,7 +259,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
-                var @params = request.GetContent<UpdateAccount>();
+                var @params = (UpdateAccount)request.GetContent(ConverterService.GetType<UpdateAccount>());
 
                 var account = GetAccount(request.KeyId);
                 AssertAccountStatus(account);
@@ -375,7 +372,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             return WrapAction((response) =>
             {
                 var account = GetAccount(request.KeyId);
-                var @params = request.GetContent<NewOrder>();
+                var @params = (NewOrder)request.GetContent(ConverterService.GetType<NewOrder>());
 
                 var order = OrderService.GetActual(account.Id, @params);
                 if (order == null)
@@ -403,7 +400,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             return WrapAction((response) =>
             {
                 var account = GetAccount(request.KeyId);
-                var @params = request.GetContent<FinalizeOrder>();
+                var @params = (FinalizeOrder)request.GetContent(ConverterService.GetType<FinalizeOrder>());
 
                 var order = OrderService.EnrollCertificate(
                     accountId: account.Id,
@@ -454,7 +451,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             return WrapAction((response) =>
             {
                 var account = GetAccount(request.KeyId);
-                var @params = request.GetContent<FinalizeOrder>();
+                var @params = (FinalizeOrder)request.GetContent(ConverterService.GetType<FinalizeOrder>());
                 var order = OrderService.EnrollCertificate(account.Id, orderId, @params);
 
                 response.Content = ConverterService.ToOrder(order);
@@ -493,20 +490,11 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
-        public AcmeResponse GetTemplates(AcmeRequest request)
-        {
-            return WrapAction((response) =>
-            {
-                var account = GetAccount(request.KeyId);
-                response.Content = TemplateService.GetTemplates(account.Id);
-            }, request);
-        }
-
         public AcmeResponse RevokeCertificate(AcmeRequest request)
         {
             return WrapAction((response) =>
             {
-                var @params = request.GetContent<RevokeCertificate>();
+                var @params = (RevokeCertificate)request.GetContent(ConverterService.GetType<RevokeCertificate>());
                 if (request.KeyId != null)
                 {
                     var account = GetAccount(request.KeyId);
@@ -519,14 +507,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
-        public AcmeResponse GetExchangeItem(AcmeRequest request)
-        {
-            return WrapAction((response) =>
-            {
-                var account = GetAccount(request.KeyId);
-                var exchangeItem = OrderService.GetExchangeItem(account.Id);
-                response.Content = ConverterService.ToExchangeItem(exchangeItem);
-            }, request);
-        }
+        
     }
 }

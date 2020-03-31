@@ -9,6 +9,5 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Repositories
     public interface IAccountRepository : IBaseRepository<IAccount>
     {
         IAccount FindByPublicKey(JsonWebKey publicKey);
-        IAccount Create(JsonWebKey key, NewAccount @params);
     }
 }

@@ -1,4 +1,5 @@
-﻿using PeculiarVentures.ACME.Protocol;
+﻿using Microsoft.Extensions.Options;
+using PeculiarVentures.ACME.Protocol;
 
 namespace PeculiarVentures.ACME.Server.Services
 {

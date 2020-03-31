@@ -3,16 +3,16 @@ using PeculiarVentures.ACME.Web.Http;
 
 namespace PeculiarVentures.ACME.Web
 {
-    public class AcmeResponse
+    public abstract class BaseAcmeResponse
     {
-        public AcmeResponse()
-        {
-        }
-
         public int StatusCode { get; set; } = 200;
         public string ReplayNonce { get; set; }
         public string Location { get; set; }
         public LinkHeaderCollection Links { get; set; } = new LinkHeaderCollection();
+    }
+
+    public class AcmeResponse : BaseAcmeResponse
+    {
         public object Content { get; set; }
 
         /// <summary>
@@ -32,12 +32,20 @@ namespace PeculiarVentures.ACME.Web
         }
     }
 
-    public class AcmeResponse<T> : AcmeResponse where T : class
+    public class AcmeResponse<T> : BaseAcmeResponse where T : class
     {
-        public new T Content
+        public static implicit operator AcmeResponse<T>(AcmeResponse response)
         {
-            get => GetContent<T>();
-            set => base.Content = value;
+            return new AcmeResponse<T>
+            {
+                StatusCode = response.StatusCode,
+                ReplayNonce = response.ReplayNonce,
+                Location = response.Location,
+                Links = response.Links,
+                Content = (T)response.Content,
+            };
         }
+
+        public T Content { get; set; }
     }
 }

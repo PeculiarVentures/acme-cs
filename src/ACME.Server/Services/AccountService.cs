@@ -25,25 +25,33 @@ namespace PeculiarVentures.ACME.Server.Services
         public IAccountRepository AccountRepository { get; }
         public IExternalAccountService ExternalAccountService { get; }
 
+        /// <summary>
+        /// Gets an account by id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public IAccount GetById(int id)
         {
             return AccountRepository.GetById(id)
                 ?? throw new AccountDoesNotExistException();
         }
 
+        /// <summary>
+        /// Gets an account by public key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
         public IAccount GetByPublicKey(JsonWebKey key)
         {
-            #region Check arguments
-            if (key is null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
-            #endregion
-
             return FindByPublicKey(key)
                 ?? throw new AccountDoesNotExistException();
         }
 
+        /// <summary>
+        /// Finds an account by public key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
         public IAccount FindByPublicKey(JsonWebKey key)
         {
             #region Check arguments
@@ -56,6 +64,12 @@ namespace PeculiarVentures.ACME.Server.Services
             return AccountRepository.FindByPublicKey(key);
         }
 
+        /// <summary>
+        /// Creates new account
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="params"></param>
+        /// <returns></returns>
         public IAccount Create(JsonWebKey key, NewAccount @params)
         {
             #region Check arguments
@@ -69,11 +83,13 @@ namespace PeculiarVentures.ACME.Server.Services
             }
             #endregion
 
-            var account = AccountRepository.Create(key, @params);
+            // Creates account
+            var account = AccountRepository.Create();
+            OnCreateParams(account, key, @params);
 
             if (Options.ExternalAccountOptions.Type != ExternalAccountType.None)
             {
-                // Use external account binding
+                // Uses external account binding
                 if (Options.ExternalAccountOptions.Type == ExternalAccountType.Required
                     && @params.ExternalAccountBinding == null)
                 {
@@ -90,9 +106,22 @@ namespace PeculiarVentures.ACME.Server.Services
                     account.ExternalAccountId = eab.Id;
                 }
             }
-            
+            // Adds account
             account = AccountRepository.Add(account);
             return account;
+        }
+
+        /// <summary>
+        /// Fills parameters
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="key"></param>
+        /// <param name="params"></param>
+        private static void OnCreateParams(IAccount account, JsonWebKey key, NewAccount @params)
+        {
+            account.Key = key;
+            account.Contacts = @params.Contacts;
+            account.TermsOfServiceAgreed = @params.TermsOfServiceAgreed ?? false;
         }
 
         public IAccount Update(int accountId, string[] contacts)

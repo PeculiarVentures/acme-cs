@@ -34,6 +34,20 @@ namespace PeculiarVentures.ACME.Server.Services
             new RNGCryptoServiceProvider().GetBytes(macKey);
 
             var account = ExternalAccountRepository.Create();
+            OnCreateParams(account, data, macKey);
+            account = ExternalAccountRepository.Add(account);
+
+            return account;
+        }
+
+        /// <summary>
+        /// Fills parameters
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="data"></param>
+        /// <param name="macKey"></param>
+        protected virtual void OnCreateParams(IExternalAccount account, object data, byte[] macKey)
+        {
             account.Key = Base64Url.Encode(macKey);
             account.Account = data;
             account.Status = Protocol.ExternalAccountStatus.Pending;
@@ -41,9 +55,6 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 account.Expires = DateTime.UtcNow.AddMinutes(Options.ExternalAccountOptions.ExpiresMinutes);
             }
-            account = ExternalAccountRepository.Add(account);
-
-            return account;
         }
 
         public IExternalAccount Validate(JsonWebKey accountKey, JsonWebSignature token)

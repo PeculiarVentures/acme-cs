@@ -7,19 +7,14 @@ namespace PeculiarVentures.ACME.Server.Services
     public class DirectoryService : BaseService, IDirectoryService
     {
         public DirectoryService(
-            ITemplateService templateService,
             IOptions<ServerOptions> options)
             : base(options)
         {
-            TemplateService = templateService
-                ?? throw new ArgumentNullException(nameof(templateService));
         }
-
-        public ITemplateService TemplateService { get; }
 
         public Directory GetDirectory()
         {
-            var directory = new Directory();
+            var directory = OnDirectoryBefore();
             if (Options.ExternalAccountOptions.Type != ExternalAccountType.None) {
                 if (directory.Meta == null)
                 {
@@ -27,11 +22,15 @@ namespace PeculiarVentures.ACME.Server.Services
                 }
                 directory.Meta.ExternalAccountRequired = true;
             }
-            if (!(TemplateService is DefaultTemplateService))
-            {
-                directory.GsGetTemplates = new Uri(new Uri(Options.BaseAddress), "templates").ToString();
-                directory.GsGetExchange = new Uri(new Uri(Options.BaseAddress), "exchange").ToString();
-            }
+            return OnDirectoryConvert(directory);
+        }
+
+        public virtual Directory OnDirectoryBefore()
+        {
+            return new Directory();
+        }
+        public virtual Directory OnDirectoryConvert(Directory directory)
+        {
             return directory;
         }
     }

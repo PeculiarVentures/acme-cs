@@ -10,13 +10,6 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 {
     public class AccountRepository : BaseRepository<IAccount>, IAccountRepository
     {
-        public IAccount Create(JsonWebKey key, NewAccount @params)
-        {
-            Models.Account account = @params;
-            account.Key = key;
-            return account;
-        }
-
         public override IAccount Create()
         {
             return new Models.Account();

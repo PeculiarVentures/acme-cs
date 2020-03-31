@@ -15,6 +15,5 @@ namespace PeculiarVentures.ACME.Server.Services
         ICertificate[] GetCertificate(int accountId, string thumbprint);
         void RevokeCertificate(int accountId, RevokeCertificate @params);
         void RevokeCertificate(JsonWebKey key, RevokeCertificate @params);
-        IExchangeItem GetExchangeItem(int accountId);
     }
 }

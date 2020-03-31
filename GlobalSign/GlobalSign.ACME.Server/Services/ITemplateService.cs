@@ -1,6 +1,6 @@
-﻿using PeculiarVentures.ACME.Protocol;
+﻿using GlobalSign.ACME.Protocol;
 
-namespace PeculiarVentures.ACME.Server.Services
+namespace GlobalSign.ACME.Server.Services
 {
     public interface ITemplateService
     {

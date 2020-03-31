@@ -154,6 +154,5 @@ namespace PeculiarVentures.ACME.Web
 
         [EnumMember(Value = "SHA256")]
         SHA256,
-
     }
 }

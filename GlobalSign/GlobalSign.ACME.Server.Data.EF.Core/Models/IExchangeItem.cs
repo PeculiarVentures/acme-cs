@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using PeculiarVentures.ACME.Web;
 
-namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
+namespace GlobalSign.ACME.Server.Data.EF.Core.Models
 {
     public interface IExchangeItem
     {

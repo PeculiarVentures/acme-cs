@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
-    public sealed class DefaultCertificateEnrollmentService : ICertificateEnrollmentService
+    public class DefaultCertificateEnrollmentService : ICertificateEnrollmentService
     {
         public Task<X509Certificate2> Enroll(IOrder order, Pkcs10CertificateRequest request)
         {
@@ -18,11 +18,6 @@ namespace PeculiarVentures.ACME.Server.Services
         }
 
         public Task Revoke(IOrder order, RevokeReason reason)
-        {
-            throw new MalformedException("Method not implemented");
-        }
-
-        public IExchangeItem GetExchangeItem(IAccount account)
         {
             throw new MalformedException("Method not implemented");
         }

@@ -16,8 +16,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
         AcmeResponse PostChallenge(AcmeRequest request, int challengeId);
         AcmeResponse FinalizeOrder(AcmeRequest request, int orderId);
         AcmeResponse GetCertificate(AcmeRequest acmeRequest, string id);
-        AcmeResponse GetTemplates(AcmeRequest acmeRequest);
         AcmeResponse RevokeCertificate(AcmeRequest request);
-        AcmeResponse GetExchangeItem(AcmeRequest request);
     }
 }

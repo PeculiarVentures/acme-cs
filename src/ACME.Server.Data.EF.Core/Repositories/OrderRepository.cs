@@ -53,12 +53,5 @@ namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
                 .OrderByDescending(o => o.Id)
                 .FirstOrDefault(o => o.Identifier == identifier && o.AccountId == accountId);
         }
-
-        public IOrder LastByTemplate(int accountId, string templateId)
-        {
-            return Records
-                .OrderByDescending(o => o.Id)
-                .FirstOrDefault(o => o.TemplateId == templateId && o.AccountId == accountId);
-        }
     }
 }

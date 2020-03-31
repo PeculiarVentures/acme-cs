@@ -1,7 +1,8 @@
 ﻿using System;
-using PeculiarVentures.ACME.Protocol;
+using GlobalSign.ACME.Protocol;
+using PeculiarVentures.ACME;
 
-namespace PeculiarVentures.ACME.Server.Services
+namespace GlobalSign.ACME.Server.Services
 {
     public sealed class DefaultTemplateService : ITemplateService
     {

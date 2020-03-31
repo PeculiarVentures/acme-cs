@@ -53,10 +53,9 @@ namespace AspNetCore.Server
                 o.ExtraCertificateStorage = new X509Certificate2Collection(rootCert);
                 o.ExternalAccountOptions = new ExternalAccountOptions
                 {
-                    Type = ExternalAccountType.Required,
+                    Type = ExternalAccountType.None,
                 };
             });
-            services.Replace(ServiceDescriptor.Transient<ITemplateService, TemplateService>());
             services.Replace(ServiceDescriptor.Transient<ICertificateEnrollmentService, CertificateEnrollmentService>());
         }
 

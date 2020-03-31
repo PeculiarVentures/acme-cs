@@ -74,5 +74,17 @@ namespace PeculiarVentures.ACME.Web
 
         }
 
+        public object GetContent(Type type)
+        {
+            try
+            {
+                return Token.GetPayload(type);
+            }
+            catch (Exception e)
+            {
+                throw new MalformedException(e.Message);
+            }
+        }
+
     }
 }

@@ -37,7 +37,7 @@ namespace PeculiarVentures.ACME.Server.AspNet
             return CreateHttpResponseMessage(response);
         }
 
-        private HttpResponseMessage CreateHttpResponseMessage(AcmeResponse response)
+        protected HttpResponseMessage CreateHttpResponseMessage(AcmeResponse response)
         {
             HttpResponseMessage result;
 
@@ -93,7 +93,7 @@ namespace PeculiarVentures.ACME.Server.AspNet
             };
         }
 
-        private AcmeRequest GetAcmeRequest(JsonWebSignature token)
+        protected AcmeRequest GetAcmeRequest(JsonWebSignature token)
         {
             return new AcmeRequest(token)
             {
@@ -205,20 +205,6 @@ namespace PeculiarVentures.ACME.Server.AspNet
         public virtual HttpResponseMessage RevokeCertificate([FromBody]JsonWebSignature token)
         {
             var response = Controller.RevokeCertificate(GetAcmeRequest(token));
-
-            return CreateHttpResponseMessage(response);
-        }
-
-        public virtual HttpResponseMessage GetTemplates([FromBody]JsonWebSignature token)
-        {
-            var response = Controller.GetTemplates(GetAcmeRequest(token));
-
-            return CreateHttpResponseMessage(response);
-        }
-
-        public virtual HttpResponseMessage GetExchangeItem([FromBody]JsonWebSignature token)
-        {
-            var response = Controller.GetExchangeItem(GetAcmeRequest(token));
 
             return CreateHttpResponseMessage(response);
         }

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Services\" />
+    <Folder Include="Controllers\" />
+    <Folder Include="DependencyInjection\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ACME.Server\ACME.Server.csproj" />
+    <ProjectReference Include="..\GlobalSign.ACME.Core\GlobalSign.ACME.Core.csproj" />
+    <ProjectReference Include="..\GlobalSign.ACME.Server.Data.EF.Core\GlobalSign.ACME.Server.Data.EF.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -34,16 +34,27 @@ namespace PeculiarVentures.ACME.Server.Services
         public IChallenge Create(int authzId, string type)
         {
             var challenge = ChallengeRepository.Create();
+            OnCreateParams(challenge, authzId, type);
+
+            ChallengeRepository.Add(challenge);
+
+            return challenge;
+        }
+
+        /// <summary>
+        /// Fills parameters
+        /// </summary>
+        /// <param name="challenge"></param>
+        /// <param name="authzId"></param>
+        /// <param name="type"></param>
+        protected virtual void OnCreateParams(IChallenge challenge, int authzId, string type)
+        {
             challenge.Type = type;
             challenge.AuthorizationId = authzId;
             challenge.Status = ChallengeStatus.Pending;
             var httpToken = new byte[20];
             new System.Security.Cryptography.RNGCryptoServiceProvider().GetBytes(httpToken);
             challenge.Token = Base64Url.Encode(httpToken);
-
-            ChallengeRepository.Add(challenge);
-
-            return challenge;
         }
 
         public IChallenge[] GetByAuthorization(int id)

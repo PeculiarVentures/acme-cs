@@ -20,6 +20,7 @@ namespace AspNetCore.Server
             catch (Exception ex)
             {
                 System.Diagnostics.Debugger.Launch();
+                Console.WriteLine(ex.ToString());
                 throw;
             }
         }
