@@ -31,6 +31,12 @@ namespace PeculiarVentures.ACME.Server.Services
         }
         public virtual Directory OnDirectoryConvert(Directory directory)
         {
+            var baseUri = new Uri(Options.BaseAddress);
+            directory.NewNonce = directory.NewNonce ?? new Uri(baseUri, "new-nonce").ToString();
+            directory.NewAccount = directory.NewAccount ?? new Uri(baseUri, "new-acct").ToString();
+            directory.NewOrder = directory.NewOrder ?? new Uri(baseUri, "new-order").ToString();
+            directory.RevokeCertificate = directory.RevokeCertificate ?? new Uri(baseUri, "revoke").ToString();
+
             return directory;
         }
     }

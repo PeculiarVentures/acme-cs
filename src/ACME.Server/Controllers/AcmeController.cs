@@ -230,6 +230,10 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
                 if (@params.OnlyReturnExisting == true)
                 {
+                    if (account == null)
+                    {
+                        throw new AccountDoesNotExistException();
+                    }
                     response.Content = ConverterService.ToAccount(account);
                     response.StatusCode = 200; // Ok
                 }

@@ -84,11 +84,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             var response = Controller.GetDirectory();
             var directory = response.GetContent<Directory>();
 
-            directory.NewNonce ??= new Uri(BaseUri, "new-nonce").ToString();
-            directory.NewAccount ??= new Uri(BaseUri, "new-acct").ToString();
-            directory.NewOrder ??= new Uri(BaseUri, "new-order").ToString();
-            directory.RevokeCertificate ??= new Uri(BaseUri, "revoke").ToString();
-
             return CreateActionResult(response);
         }
 
