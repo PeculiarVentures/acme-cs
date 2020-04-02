@@ -135,20 +135,27 @@ namespace PeculiarVentures.ACME.Client
 
             var response = await _http.SendAsync(request);
 
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                AcmeException ex;
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException)
+            {
+                string message = null;
 
                 if (Protocol.MediaTypeHeader.ProblemJsonContentTypeHeaderValue.Equals(response.Content?.Headers?.ContentType))
                 {
                     var error = await Deserialize<Protocol.Error>(response);
-                    ex = new AcmeException(error.Type, error.Detail);
+
+                    message = error.Detail;
                 }
-                else
+
+                if (string.IsNullOrEmpty(message))
                 {
-                    Console.WriteLine(await response.Content.ReadAsStringAsync());
-                    ex = new AcmeException(Protocol.ErrorType.ServerInternal, $"Unexpected response status code [{response.StatusCode}].", response.StatusCode);
+                    message = $"Unexpected response status code [{response.StatusCode}] for [{method}] request to [{url}]";
                 }
+
+                var ex = new AcmeException(Protocol.ErrorType.ServerInternal, message);
 
                 _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
 
