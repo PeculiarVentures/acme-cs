@@ -16,11 +16,6 @@ namespace GlobalSign.ACME.Server.AspNet
             var response = Controller.GetDirectory();
             var directory = response.GetContent<Directory>();
 
-            directory.NewNonce = directory.NewNonce ?? new Uri(BaseUri, "new-nonce").ToString();
-            directory.NewAccount = directory.NewAccount ?? new Uri(BaseUri, "new-acct").ToString();
-            directory.NewOrder = directory.NewOrder ?? new Uri(BaseUri, "new-order").ToString();
-            directory.RevokeCertificate = directory.RevokeCertificate ?? new Uri(BaseUri, "revoke").ToString();
-
             return CreateHttpResponseMessage(response);
         }
 

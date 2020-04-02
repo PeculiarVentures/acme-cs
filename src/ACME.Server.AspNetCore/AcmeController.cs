@@ -84,11 +84,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             var response = Controller.GetDirectory();
             var directory = response.GetContent<Directory>();
 
-            directory.NewNonce ??= new Uri(BaseUri, "new-nonce").ToString();
-            directory.NewAccount ??= new Uri(BaseUri, "new-acct").ToString();
-            directory.NewOrder ??= new Uri(BaseUri, "new-order").ToString();
-            directory.RevokeCertificate ??= new Uri(BaseUri, "revoke").ToString();
-
             return CreateActionResult(response);
         }
 
@@ -129,12 +124,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         public ActionResult NewOrder([FromBody]JsonWebSignature token)
         {
             var response = Controller.CreateOrder(GetAcmeRequest(token));
-
-            if (response.Location != null)
-            {
-                // Complete Location
-                response.Location = new Uri(BaseUri, $"order/{response.Location}").ToString();
-            }
 
             ProcessOrder(response);
 
