@@ -384,7 +384,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     order = OrderService.Create(account.Id, @params);
                     response.StatusCode = 201; // Created
                 }
-                response.Location = $"{order.Id}";
+                response.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
                 response.Content = ConverterService.ToOrder(order);
             });
         }
@@ -395,22 +395,20 @@ namespace PeculiarVentures.ACME.Server.Controllers
             {
                 var account = GetAccount(request.KeyId);
                 var order = OrderService.GetById(account.Id, orderId);
+                response.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
                 response.Content = ConverterService.ToOrder(order);
             }, request);
         }
 
-        public AcmeResponse FinalizeOrder(AcmeRequest request)
+        public AcmeResponse FinalizeOrder(AcmeRequest request, int orderId)
         {
             return WrapAction((response) =>
             {
                 var account = GetAccount(request.KeyId);
                 var @params = (FinalizeOrder)request.GetContent(ConverterService.GetType<FinalizeOrder>());
+                var order = OrderService.EnrollCertificate(account.Id, orderId, @params);
 
-                var order = OrderService.EnrollCertificate(
-                    accountId: account.Id,
-                    orderId: GetIdFromLink(request.Url),
-                    @params: @params);
-
+                response.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
                 response.Content = ConverterService.ToOrder(order);
             }, request);
         }
@@ -447,18 +445,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 var authz = AuthorizationService.GetById(account.Id, authzId);
 
                 response.Content = ConverterService.ToAuthorization(authz);
-            }, request);
-        }
-
-        public AcmeResponse FinalizeOrder(AcmeRequest request, int orderId)
-        {
-            return WrapAction((response) =>
-            {
-                var account = GetAccount(request.KeyId);
-                var @params = (FinalizeOrder)request.GetContent(ConverterService.GetType<FinalizeOrder>());
-                var order = OrderService.EnrollCertificate(account.Id, orderId, @params);
-
-                response.Content = ConverterService.ToOrder(order);
             }, request);
         }
 
