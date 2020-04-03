@@ -399,6 +399,28 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
+        public AcmeResponse PostOrders(AcmeRequest request, int page)
+        {
+            return WrapAction((response) =>
+            {
+                var account = GetAccount(request.KeyId);
+                var orderList = OrderService.GetList(account.Id, page);
+
+                // Add links
+                var link = $"{Options.BaseAddress}/orders";
+                if (page > 0)
+                {
+                    response.Links.Add(new Web.Http.LinkHeader($"{link}?cursor={page - 1}", new Web.Http.LinkHeaderItem("rel", "previous", true)));
+                }
+                if (orderList.NextPage)
+                {
+                    response.Links.Add(new Web.Http.LinkHeader($"{link}?cursor={page + 1}", new Web.Http.LinkHeaderItem("rel", "next", true)));
+                }
+
+                response.Content = ConverterService.ToOrderList(orderList.Orders);
+            }, request);
+        }
+
         public AcmeResponse FinalizeOrder(AcmeRequest request)
         {
             return WrapAction((response) =>
@@ -410,6 +432,18 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     accountId: account.Id,
                     orderId: GetIdFromLink(request.Url),
                     @params: @params);
+
+                response.Content = ConverterService.ToOrder(order);
+            }, request);
+        }
+
+        public AcmeResponse FinalizeOrder(AcmeRequest request, int orderId)
+        {
+            return WrapAction((response) =>
+            {
+                var account = GetAccount(request.KeyId);
+                var @params = (FinalizeOrder)request.GetContent(ConverterService.GetType<FinalizeOrder>());
+                var order = OrderService.EnrollCertificate(account.Id, orderId, @params);
 
                 response.Content = ConverterService.ToOrder(order);
             }, request);
@@ -450,18 +484,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
-        public AcmeResponse FinalizeOrder(AcmeRequest request, int orderId)
-        {
-            return WrapAction((response) =>
-            {
-                var account = GetAccount(request.KeyId);
-                var @params = (FinalizeOrder)request.GetContent(ConverterService.GetType<FinalizeOrder>());
-                var order = OrderService.EnrollCertificate(account.Id, orderId, @params);
-
-                response.Content = ConverterService.ToOrder(order);
-            }, request);
-        }
-
+        #region Certificate management
         public AcmeResponse GetCertificate(AcmeRequest request, string thumbprint)
         {
             return WrapAction((response) =>
@@ -510,7 +533,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 }
             }, request);
         }
+        #endregion
 
-        
     }
 }

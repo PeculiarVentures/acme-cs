@@ -177,7 +177,7 @@ namespace PeculiarVentures.ACME.Client
 
             response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
             response.Headers.TryGetValues("location", out var locationValues);
-            response.Headers.TryGetValues("links", out var linksValues);
+            response.Headers.TryGetValues("link", out var linksValues);
 
             var acmeResponse = new AcmeResponse
             {
@@ -389,6 +389,11 @@ namespace PeculiarVentures.ACME.Client
         public async Task<AcmeResponse<Protocol.Order>> OrderGetAsync(string orderUrl)
         {
             return await Request(GetType(typeof(Protocol.Order)), orderUrl, HttpMethod.Post, "");
+        }
+
+        public async Task<AcmeResponse<Protocol.OrderList>> OrderListGetAsync(string ordersUrl)
+        {
+            return await Request(GetType(typeof(Protocol.OrderList)), ordersUrl, HttpMethod.Post, "");
         }
 
         /// <summary>

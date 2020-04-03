@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -21,9 +22,11 @@ namespace PeculiarVentures.ACME.Client
     // TODO: Need to write tests for a error states
     public class AcmeClientTests
     {
-        private const string _directory = "https://acme-staging-v02.api.letsencrypt.org/directory";
+        //private const string _directory = "https://acme-staging-v02.api.letsencrypt.org/directory";
+        private const string _directory = "https://localhost:5003/directory";
         private const string _contact = "mailto:spark1.dell@gmail.com";
-        private const string _domain = "aeg-dev0-srv.aegdomain2.com";
+        //private const string _domain = "aeg-dev0-srv.aegdomain2.com";
+        private const string _domain = "localhost:5003.com";
 
         private readonly Identifier _identifier = new Identifier
         {
@@ -67,6 +70,36 @@ namespace PeculiarVentures.ACME.Client
             {
                 throw new WebException("Post key authorization error.");
             }
+        }
+
+        [Fact]
+        public async void GetOrders()
+        {
+            var client = await GetClient();
+            var account = await client.AccountCreateAsync(new NewAccount
+            {
+                TermsOfServiceAgreed = true,
+                Contacts = new[] { _contact },
+            });
+            var identifiers = new List<Identifier> { _identifier };
+            await client.OrderCreateAsync(new NewOrder
+            {
+                Identifiers = identifiers,
+            });
+            await client.OrderCreateAsync(new NewOrder
+            {
+                Identifiers = new List<Identifier> { new Identifier { Value = "googl.com", Type = "dns" } },
+            });
+
+            var orders = await client.OrderListGetAsync(account.Content.Orders);
+            var orders2 = await client.OrderListGetAsync($"{account.Content.Orders}?cursor=1");
+            var urlNext = orders.Links.FindUrl("next");
+            //var nextLink = orders.Links.FirstOrDefault(o => o.Items == "rel=\"next\"");
+            //if (nextLink != null)
+            //{
+            //    var orders3 = await client.OrderListGetAsync(nextLink.Url.ToString());
+            //}
+            var stop = 5;
         }
 
         [Fact]

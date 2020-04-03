@@ -44,18 +44,8 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <returns></returns>
         public Account ToAccount(IAccount data)
         {
-            var result = OnToAccountBefore(data);
+            var result = CreateInstance<Account>();
             return OnToAccountConvert(result, data);
-        }
-
-        /// <summary>
-        /// Creates empty JSON Account
-        /// </summary>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        protected virtual Account OnToAccountBefore(IAccount source)
-        {
-            return new Account();
         }
 
         /// <summary>
@@ -72,6 +62,7 @@ namespace PeculiarVentures.ACME.Server.Services
             order.TermsOfServiceAgreed = data.TermsOfServiceAgreed;
             order.Key = data.Key;
             order.CreatedAt = data.CreatedAt;
+            order.Orders = new Uri(new Uri(Options.BaseAddress), "orders").ToString();
             if (data.ExternalAccountId != null)
             {
                 order.ExternalAccountBinding = ExternalAccountRepository.GetById(data.ExternalAccountId.Value).Account;
@@ -88,18 +79,8 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <returns></returns>
         public Challenge ToChallenge(IChallenge data)
         {
-            var result = OnToChallengeBefore(data);
+            var result = CreateInstance<Challenge>();
             return OnToChallengeConvert(result, data);
-        }
-
-        /// <summary>
-        /// Creates empty JSON Challenge
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        protected virtual Challenge OnToChallengeBefore(IChallenge data)
-        {
-            return new Challenge();
         }
 
         /// <summary>
@@ -129,18 +110,8 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <returns></returns>
         public Error ToError(IError data)
         {
-            var result = OnToErrorBefore(data);
+            var result = CreateInstance<Error>();
             return OnToErrorConvert(result, data);
-        }
-
-        /// <summary>
-        /// Creates empty JSON Error
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        protected virtual Error OnToErrorBefore(IError data)
-        {
-            return new Error();
         }
 
         /// <summary>
@@ -168,18 +139,8 @@ namespace PeculiarVentures.ACME.Server.Services
         public Authorization ToAuthorization(IAuthorization data)
         {
             var challenges = ChallengeRepository.GetByAuthorization(data.Id);
-            var result = OnToAuthorizationBefore(data);
+            var result = CreateInstance<Authorization>();
             return OnToAuthorizationConvert(result, data, challenges);
-        }
-
-        /// <summary>
-        /// Creates empty JSON Authorization
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        protected virtual Authorization OnToAuthorizationBefore(IAuthorization data)
-        {
-            return new Authorization();
         }
 
         /// <summary>
@@ -215,23 +176,20 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <returns></returns>
         public Order ToOrder(IOrder data)
         {
-            var authzs = OrderAuthorizationRepository.GetByOrder(data.Id)
-                .Select(o => AuthorizationRepository.GetById(o.AuthorizationId))
-                .ToArray();
+            
+            var result = CreateInstance<Order>();
 
-            var order = OnToOrderConvertBefore(data);
-
-            return OnToOrderConvert(order, data, authzs);
+            return OnToOrderConvert(result, data);
         }
-
-        /// <summary>
-        /// Creates empty JSON Order
-        /// </summary>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        protected virtual Order OnToOrderConvertBefore(IOrder source)
+        
+        public OrderList ToOrderList(IOrder[] orders)
         {
-            return new Order();
+            var orderList = new OrderList();
+
+            var ordersId = orders.Select(o => o.Id.ToString());
+            orderList.Orders = ordersId.ToArray();
+
+            return orderList;
         }
 
         /// <summary>
@@ -242,8 +200,12 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <param name="data"></param>
         /// <param name="authzs"></param>
         /// <returns></returns>
-        protected virtual Order OnToOrderConvert(Order order, IOrder data, IAuthorization[] authzs)
+        protected virtual Order OnToOrderConvert(Order order, IOrder data)
         {
+            var authzs = OrderAuthorizationRepository.GetByOrder(data.Id)
+                .Select(o => AuthorizationRepository.GetById(o.AuthorizationId))
+                .ToArray();
+
             order.Identifiers = authzs.Select(o =>
                     new Identifier(o.Identifier.Type, o.Identifier.Value)).ToArray();
             order.Authorizations = authzs.Select(o => $"{o.Id}").ToArray();
@@ -259,6 +221,14 @@ namespace PeculiarVentures.ACME.Server.Services
         #endregion
 
         #region TypeConvert
+        private T CreateInstance<T>()
+            where T : class, new()
+        {
+            var type = GetType<Order>();
+            var obj = (T)Activator.CreateInstance(type);
+            return obj;
+        }
+
         /// <summary>
         /// Dictionary extended types
         /// </summary>
@@ -284,6 +254,7 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public Type GetType<T>()
+            where T: class, new()
         {
             return GetType(typeof(T));
         }

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace PeculiarVentures.ACME.Web.Http
 {
-    public class LinkHeaderCollection : CollectionBase, IEnumerable<LinkHeader>
+    public class LinkHeaderCollection : Collection<LinkHeader>
     {
 
         public LinkHeaderCollection()
@@ -20,8 +21,22 @@ namespace PeculiarVentures.ACME.Web.Http
                 throw new ArgumentNullException(nameof(values));
             }
             #endregion
+            foreach (var item in values)
+            {
+                Items.Add(LinkHeader.Parse(item));
+            }
+        }
 
-            InnerList.AddRange(values.Select(LinkHeader.Parse).ToArray());
+        public string FindUrl(string rel)
+        {
+            foreach (var item in Items)
+            {
+                if (item.Items.FirstOrDefault(o => o.Value.ToUpper() == rel.ToUpper()) != null)
+                {
+                    return item.Url.ToString();
+                };
+            }
+            return null;
         }
 
         public LinkHeaderCollection(LinkHeader[] linkHeaders)
@@ -33,25 +48,28 @@ namespace PeculiarVentures.ACME.Web.Http
                 throw new ArgumentNullException(nameof(linkHeaders));
             }
             #endregion
-
-            InnerList.AddRange(linkHeaders.ToArray());
-        }
-
-        public int Add(LinkHeader item)
-        {
-            #region Check arguments
-            if (item is null)
+            foreach (var item in linkHeaders)
             {
-                throw new ArgumentNullException(nameof(item));
+                Items.Add(item);
             }
-            #endregion
-
-            return List.Add(item);
         }
 
-        IEnumerator<LinkHeader> IEnumerable<LinkHeader>.GetEnumerator()
-        {
-            return List.Cast<LinkHeader>().GetEnumerator();
-        }
+        //public int Add(LinkHeader item)
+        //{
+        //    #region Check arguments
+        //    if (item is null)
+        //    {
+        //        throw new ArgumentNullException(nameof(item));
+        //    }
+        //    #endregion
+
+        //    return List.Add(item);
+        //}
+
+        //todo recursive
+        //IEnumerator<LinkHeader> IEnumerable<LinkHeader>.GetEnumerator()
+        //{
+        //    return List.Cast<LinkHeader>().GetEnumerator();
+        //}
     }
 }
