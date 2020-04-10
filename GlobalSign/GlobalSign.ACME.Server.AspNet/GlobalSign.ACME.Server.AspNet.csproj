@@ -76,7 +76,7 @@
       <Name>ACME.Server</Name>
     </ProjectReference>
     <ProjectReference Include="..\GlobalSign.ACME.Server\GlobalSign.ACME.Server.csproj">
-      <Project>{7B44CE3D-5F2A-4965-AF77-C599F4561C6F}</Project>
+      <Project>{2F5AC7E5-7B31-415C-85B3-8352E18A40AA}</Project>
       <Name>GlobalSign.ACME.Server</Name>
     </ProjectReference>
   </ItemGroup>
@@ -84,6 +84,5 @@
     <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v16.0\WebApplications\Microsoft.WebApplication.targets" />
   <ProjectExtensions />
 </Project>

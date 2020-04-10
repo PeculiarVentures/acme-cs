@@ -143,11 +143,16 @@ namespace PeculiarVentures.ACME.Client
             {
                 string message = null;
 
-                if (Protocol.MediaTypeHeader.ProblemJsonContentTypeHeaderValue.Equals(response.Content?.Headers?.ContentType))
+                try
                 {
                     var error = await Deserialize<Protocol.Error>(response);
 
-                    message = error.Detail;
+                    message = $"{error.Type}: {error.Detail}";
+                }
+                catch
+                {
+                    _logger?.LogError("Cannot parse ACME Error from Client response");
+                    _logger?.LogError(await response.Content.ReadAsStringAsync());
                 }
 
                 if (string.IsNullOrEmpty(message))
