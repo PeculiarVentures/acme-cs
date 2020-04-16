@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Services;
+using PeculiarVentures.ACME.Web;
 
 namespace AspNetCore.Server.Controllers
 {
@@ -23,6 +23,7 @@ namespace AspNetCore.Server.Controllers
         [Route("account/create")]
         public IExternalAccount CreateExternalAccount([FromQuery] string id)
         {
+            var q = GetQuery();
             return ExternalAccountService.Create(id);
         }
 
@@ -30,7 +31,21 @@ namespace AspNetCore.Server.Controllers
         [Route("account/{id:int}")]
         public IExternalAccount GetAccount(int id)
         {
+            var q = GetQuery();
             return ExternalAccountService.GetById(id);
+        }
+
+        private Dictionary<string, string[]> GetQuery()
+        {
+            var query = new Query();
+            if (Request.QueryString.HasValue)
+            {
+                foreach (var item in Request.Query)
+                {
+                    query.Add(item.Key, item.Value);
+                }
+            }
+            return query;
         }
     }
 }

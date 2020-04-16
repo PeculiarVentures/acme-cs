@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using PeculiarVentures.ACME.Protocol;
@@ -27,6 +28,7 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             return new AcmeRequest(token)
             {
                 Method = Request.Method,
+                Query = GetQuery(),
             };
         }
 
@@ -35,7 +37,21 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             return new AcmeRequest()
             {
                 Method = Request.Method,
+                Query = GetQuery(),
             };
+        }
+
+        private Query GetQuery()
+        {
+            var query = new Query();
+            if (Request.QueryString.HasValue)
+            {
+                foreach (var item in Request.Query)
+                {
+                    query.Add(item.Key, item.Value);
+                }
+            }
+            return query;
         }
 
         protected ActionResult CreateActionResult(AcmeResponse response)
@@ -146,14 +162,16 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
 
         [Route("orders")]
         [HttpPost]
-        public ActionResult PostOrders([FromBody]JsonWebSignature token, [FromQuery] int cursor = 0)
+        public ActionResult PostOrders([FromBody]JsonWebSignature token)
         {
-            var response = Controller.PostOrders(GetAcmeRequest(token), cursor);
+            var response = Controller.PostOrders(GetAcmeRequest(token));
 
             ProcessOrders(response);
 
             return CreateActionResult(response);
         }
+
+
 
         [Route("authz/{id:int}")]
         [HttpPost]

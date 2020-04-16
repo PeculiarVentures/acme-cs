@@ -399,22 +399,44 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
-        public AcmeResponse PostOrders(AcmeRequest request, int page)
+        public AcmeResponse PostOrders(AcmeRequest request)
         {
             return WrapAction((response) =>
             {
                 var account = GetAccount(request.KeyId);
-                var orderList = OrderService.GetList(account.Id, page);
+                var @params = request.Query;
+                var orderList = OrderService.GetList(account.Id, @params);
+
+                // Create query link
+                string addingString = null;
+                if (@params.Count > 0)
+                {
+                    foreach (var item in @params)
+                    {
+                        if (item.Key != "cursor")
+                        {
+                            foreach (var value in item.Value)
+                            {
+                                addingString += $"&{item.Key}={value}";
+                            }
+                        }
+                    }
+                }
 
                 // Add links
                 var link = $"{Options.BaseAddress}/orders";
+                int page = 0;
+                if (@params.ContainsKey("cursor"))
+                {
+                    page = int.Parse(@params["cursor"].FirstOrDefault());
+                }
                 if (page > 0)
                 {
-                    response.Links.Add(new Web.Http.LinkHeader($"{link}?cursor={page - 1}", new Web.Http.LinkHeaderItem("rel", "previous", true)));
+                    response.Links.Add(new Web.Http.LinkHeader($"{link}?cursor={page - 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "previous", true)));
                 }
                 if (orderList.NextPage)
                 {
-                    response.Links.Add(new Web.Http.LinkHeader($"{link}?cursor={page + 1}", new Web.Http.LinkHeaderItem("rel", "next", true)));
+                    response.Links.Add(new Web.Http.LinkHeader($"{link}?cursor={page + 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "next", true)));
                 }
 
                 response.Content = ConverterService.ToOrderList(orderList.Orders);

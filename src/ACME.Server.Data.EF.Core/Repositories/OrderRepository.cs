@@ -6,6 +6,7 @@ using PeculiarVentures.ACME.Server.Data.EF.Core.Models;
 using System.Linq;
 using System;
 using PeculiarVentures.ACME.Protocol;
+using PeculiarVentures.ACME.Protocol.Messages;
 
 namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
 {
@@ -55,10 +56,10 @@ namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
                 .FirstOrDefault(o => o.Identifier == identifier && o.AccountId == accountId);
         }
 
-        public IOrderList GetList(int accountId, int page, int size)
+        public IOrderList GetList(int accountId, OrderListParams @params, int size)
         {
             var items = Records.Where(o => o.AccountId == accountId);
-            items = items.Skip(page * size);
+            items = items.Skip(@params.Page * size);
             var count = items.Count();
             var orders = items.Take(size).ToArray();
 

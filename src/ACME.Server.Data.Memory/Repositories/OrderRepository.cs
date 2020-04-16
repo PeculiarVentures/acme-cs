@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 using PeculiarVentures.ACME.Server.Data.Memory.Models;
+using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 {
@@ -38,9 +39,16 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
                 .FirstOrDefault(o => o.Certificate != null && o.Certificate.Thumbprint.Equals(thumbprint, StringComparison.CurrentCultureIgnoreCase));
         }
 
-        public IOrderList GetList(int accountId, int page, int size)
+        public IOrderList GetList(int accountId, Query @params, int size)
         {
             var items = Items.Where(o => o.AccountId == accountId);
+
+            int page = 0;
+            if (@params.ContainsKey("cursor"))
+            {
+                page = int.Parse(@params["cursor"].FirstOrDefault());
+            }
+
             items = items.Skip(page * size);
             var count = items.Count();
             var orders = items.Take(size).ToArray();

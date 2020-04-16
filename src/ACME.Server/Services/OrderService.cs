@@ -341,9 +341,9 @@ namespace PeculiarVentures.ACME.Server.Services
             OrderRepository.Update(order);
         }
 
-        public IOrderList GetList(int accountId, int page)
+        public IOrderList GetList(int accountId, Query @params)
         {
-            return OrderRepository.GetList(accountId, page, Options.OrdersPageSize);
+            return OrderRepository.GetList(accountId, @params, Options.OrdersPageSize);
         }
     }
 }
