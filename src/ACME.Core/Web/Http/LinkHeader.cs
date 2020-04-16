@@ -18,7 +18,7 @@ namespace PeculiarVentures.ACME.Web.Http
 
         public LinkHeader(string url)
         {
-            Url = new Uri(url);
+            Url = new Uri(url, UriKind.RelativeOrAbsolute);
         }
 
         public LinkHeader(string url, LinkHeaderItem item) : this(url)
@@ -51,7 +51,7 @@ namespace PeculiarVentures.ACME.Web.Http
                 throw new FormatException("Link doesn't match to regular expression");
             }
 
-            result.Url = new Uri(match.Groups[1].Value);
+            result.Url = new Uri(match.Groups[1].Value, UriKind.RelativeOrAbsolute);
             var attributes = match.Groups[2].Value
                 .Split(';')
                 .Select(LinkHeaderItem.Parse)

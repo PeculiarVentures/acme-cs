@@ -12,6 +12,15 @@
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <PackageId>PeculiarVentures.ACME.Server.AspNet</PackageId>
+    <PackageVersion>0.1</PackageVersion>
+    <Authors>PeculiarVentures</Authors>
+    <Description>ACME AspNet server</Description>
+    <Copyright>PeculiarVentures</Copyright>
+    <Owners>PeculiarVentures</Owners>
+    <Title>PeculiarVentures.ACME.Server.AspNet</Title>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -131,4 +140,5 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\..\packages\NuGet.Build.Packaging.0.2.5-dev.8\build\NuGet.Build.Packaging.targets" Condition="Exists('..\..\packages\NuGet.Build.Packaging.0.2.5-dev.8\build\NuGet.Build.Packaging.targets')" />
 </Project>

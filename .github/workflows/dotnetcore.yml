@@ -4,15 +4,35 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v1
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.101
+        dotnet-version: 3.1.200
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v1
+      with:
+        nuget-version: '5.x'
     - name: Generate coverage report
       run: dotnet test /p:CollectCoverage=true /p:CoverletOutput=TestResults/ /p:CoverletOutputFormat=lcov
-    # - name: Build with dotnet
-    #  run: dotnet build --configuration Release
+    - name: Build ACME.Core package
+      run: dotnet pack --configuration Release -o bin src/ACME.Core
+    - name: Build ACME.Server package
+      run: dotnet pack --configuration Release -o bin src/ACME.Server
+    - name: Build ACME.Server.Data.Abstractions package
+      run: dotnet pack --configuration Release -o bin src/ACME.Server.Data.Abstractions
+    - name: Build ACME.Client package
+      run: dotnet pack --configuration Release -o bin src/ACME.Client
+    - name: Build ACME.Server.AspNet package
+      run: |
+        nuget restore
+        dotnet build --configuration Release src/ACME.Server.AspNet
+        nuget pack src/ACME.Server.AspNet -Properties Configuration=Release -OutputDirectory bin
+    - name: Create artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: NuGet packages
+        path: bin

@@ -4,6 +4,12 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>PeculiarVentures.ACME.Server</RootNamespace>
     <AssemblyName>PeculiarVentures.ACME.Server</AssemblyName>
+    <PackageVersion>0.1</PackageVersion>
+    <Authors>PeculiarVentures</Authors>
+    <Copyright>PeculiarVentures</Copyright>
+    <Owners>PeculiarVentures</Owners>
+    <Title>PeculiarVentures.ACME.Server</Title>
+    <Description>ACME Server base classes library</Description>
   </PropertyGroup>
 
   <ItemGroup>

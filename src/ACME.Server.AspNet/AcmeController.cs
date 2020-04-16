@@ -119,12 +119,6 @@ namespace PeculiarVentures.ACME.Server.AspNet
         {
             var response = Controller.CreateOrder(GetAcmeRequest(token));
 
-            if (response.Location != null)
-            {
-                // Complete Location
-                response.Location = new Uri(BaseUri, $"order/{response.Location}").ToString();
-            }
-
             ProcessOrder(response);
 
             return CreateHttpResponseMessage(response);

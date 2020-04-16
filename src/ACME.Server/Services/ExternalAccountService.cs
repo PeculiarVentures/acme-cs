@@ -72,14 +72,13 @@ namespace PeculiarVentures.ACME.Server.Services
 
             var @prtoected = token.GetProtected();
 
-            var externalAccount = GetById(@prtoected.KeyID);
-
             var eabPayload = token.GetPayload<JsonWebKey>();
             if (!eabPayload.Equals(accountKey))
             {
                 throw new MalformedException("Signed content in externalAccountBinding doesn't match to requirement"); // TODO check rfc error
             }
 
+            var externalAccount = GetById(@prtoected.KeyID);
             if (externalAccount.Status != Protocol.ExternalAccountStatus.Pending)
             {
                 throw new MalformedException("External account has wrong status"); // TODO check rfc error
@@ -105,9 +104,10 @@ namespace PeculiarVentures.ACME.Server.Services
         {
             var externalAccount = ExternalAccountRepository.GetById(id)
                 ?? throw new MalformedException("External account does not exist");
-            if (externalAccount.Expires < DateTime.UtcNow)
+            if (externalAccount.Status == Protocol.ExternalAccountStatus.Pending && externalAccount.Expires < DateTime.UtcNow)
             {
-                throw new MalformedException("External account expired");
+                externalAccount.Status = Protocol.ExternalAccountStatus.Expired;
+                ExternalAccountRepository.Update(externalAccount);
             }
             return externalAccount;
         }

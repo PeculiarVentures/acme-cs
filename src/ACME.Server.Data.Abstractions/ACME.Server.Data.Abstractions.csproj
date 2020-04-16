@@ -4,10 +4,17 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>PeculiarVentures.ACME.Server.Data.Abstractions</RootNamespace>
     <AssemblyName>PeculiarVentures.ACME.Server.Data.Abstractions</AssemblyName>
+    <PackageId>PeculiarVentures.ACME.Server.Data.Abstraction</PackageId>
+    <PackageVersion>0.1</PackageVersion>
+    <Authors>PeculiarVentures</Authors>
+    <Copyright>PeculiarVentures</Copyright>
+    <Owners>PeculiarVentures</Owners>
+    <Title>PeculiarVentures.ACME.Server.Data.Abstraction</Title>
+    <Description>ACME Data abstraction library</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <WarningLevel>4</WarningLevel>
+    <WarningLevel></WarningLevel>
     <DefineConstants></DefineConstants>
     <WarningLevel></WarningLevel>
     <Nullable></Nullable>
