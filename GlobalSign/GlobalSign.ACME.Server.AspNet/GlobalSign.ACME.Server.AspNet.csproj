@@ -76,11 +76,7 @@
       <Name>ACME.Server</Name>
     </ProjectReference>
     <ProjectReference Include="..\GlobalSign.ACME.Server\GlobalSign.ACME.Server.csproj">
-<<<<<<< HEAD
-      <Project>{8C01F3AD-CB87-4D45-9F91-AB5B013605DB}</Project>
-=======
       <Project>{2F5AC7E5-7B31-415C-85B3-8352E18A40AA}</Project>
->>>>>>> origin/master
       <Name>GlobalSign.ACME.Server</Name>
     </ProjectReference>
   </ItemGroup>
