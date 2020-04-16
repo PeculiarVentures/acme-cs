@@ -72,6 +72,8 @@ namespace PeculiarVentures.ACME.Client
             }
         }
 
+        /*
+        // TODO: for this test need server with getOrders
         [Fact]
         public async void GetOrders()
         {
@@ -101,6 +103,7 @@ namespace PeculiarVentures.ACME.Client
             //}
             var stop = 5;
         }
+        */
 
         [Fact]
         public async void ClientCreate()
