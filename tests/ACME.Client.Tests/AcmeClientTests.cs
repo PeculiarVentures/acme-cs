@@ -22,11 +22,11 @@ namespace PeculiarVentures.ACME.Client
     // TODO: Need to write tests for a error states
     public class AcmeClientTests
     {
-        //private const string _directory = "https://acme-staging-v02.api.letsencrypt.org/directory";
-        private const string _directory = "https://localhost:5003/directory";
+        private const string _directory = "https://acme-staging-v02.api.letsencrypt.org/directory";
+        //private const string _directory = "https://localhost:5003/directory";
         private const string _contact = "mailto:spark1.dell@gmail.com";
-        //private const string _domain = "aeg-dev0-srv.aegdomain2.com";
-        private const string _domain = "localhost:5003.com";
+        private const string _domain = "aeg-dev0-srv.aegdomain2.com";
+        //private const string _domain = "localhost:5003.com";
 
         private readonly Identifier _identifier = new Identifier
         {
