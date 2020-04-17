@@ -10,8 +10,9 @@
     <Folder Include="DependencyInjection\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ACME.Server\ACME.Server.csproj" />
-    <ProjectReference Include="..\GlobalSign.ACME.Core\GlobalSign.ACME.Core.csproj" />
     <ProjectReference Include="..\GlobalSign.ACME.Server.Data.EF.Core\GlobalSign.ACME.Server.Data.EF.Core.csproj" />
+    <ProjectReference Include="..\GlobalSign.ACME.Core\GlobalSign.ACME.Core.csproj" />
+    <ProjectReference Include="..\..\src\ACME.Server\ACME.Server.csproj" />
+    <ProjectReference Include="..\..\src\ACME.Core\ACME.Core.csproj" />
   </ItemGroup>
 </Project>

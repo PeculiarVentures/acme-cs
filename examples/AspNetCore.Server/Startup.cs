@@ -48,6 +48,7 @@ namespace AspNetCore.Server
             services.AddAcmeMemoryRepositories();
             services.AddAcmeServerServices(o =>
             {
+                o.OrdersPageSize = 1;
                 o.BaseAddress = "https://localhost:5003";
                 o.DownloadCertificateFormat = DownloadCertificateFormat.PemCertificateChain;
                 o.ExtraCertificateStorage = new X509Certificate2Collection(rootCert);

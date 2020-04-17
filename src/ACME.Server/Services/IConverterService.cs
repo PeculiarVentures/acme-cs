@@ -11,7 +11,8 @@ namespace PeculiarVentures.ACME.Server.Services
         Account ToAccount(IAccount data);
         Authorization ToAuthorization(IAuthorization data);
         Order ToOrder(IOrder data);
+        OrderList ToOrderList(IOrder[] orders);
         Type GetType(Type type);
-        Type GetType<T>();
+        Type GetType<T>() where T: class, new();
     }
 }

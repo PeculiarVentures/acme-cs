@@ -3,6 +3,8 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
+using PeculiarVentures.ACME.Server.Data.Memory.Models;
+using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 {
@@ -14,12 +16,12 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 
         public override IOrder Create()
         {
-            return new Models.Order();
+            return new Order();
         }
 
         public ICertificate CreateCertificate(X509Certificate2 cert)
         {
-            return new Models.Certificate
+            return new Certificate
             {
                 RawData = cert.RawData,
                 Thumbprint = cert.Thumbprint,
@@ -35,6 +37,26 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
         {
             return Items
                 .FirstOrDefault(o => o.Certificate != null && o.Certificate.Thumbprint.Equals(thumbprint, StringComparison.CurrentCultureIgnoreCase));
+        }
+
+        public IOrderList GetList(int accountId, Query @params, int size)
+        {
+            var items = Items.Where(o => o.AccountId == accountId);
+
+            int page = 0;
+            if (@params.ContainsKey("cursor"))
+            {
+                page = int.Parse(@params["cursor"].FirstOrDefault());
+            }
+
+            items = items.Skip(page * size);
+            var count = items.Count();
+            var orders = items.Take(size).ToArray();
+
+            return new OrderList {
+                Orders = orders,
+                NextPage = count > size,
+            };
         }
     }
 }

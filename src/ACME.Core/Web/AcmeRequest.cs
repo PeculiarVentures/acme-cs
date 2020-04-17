@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+
 namespace PeculiarVentures.ACME.Web
 {
     public class AcmeRequest
@@ -40,6 +42,9 @@ namespace PeculiarVentures.ACME.Web
             }
         }
 
+        
+
+        public Query Query { get; set; }
         public object Content { get; set; }
         public string Method { get; set; }
         public string Url

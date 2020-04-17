@@ -5,10 +5,12 @@ using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 using PeculiarVentures.ACME.Server.Data.EF.Core.Models;
 using System.Linq;
 using System;
+using PeculiarVentures.ACME.Protocol;
+using PeculiarVentures.ACME.Protocol.Messages;
 
 namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
 {
-    public class OrderRepository : BaseRepository<IOrder, Order>, IOrderRepository
+    public class OrderRepository : BaseRepository<IOrder, Models.Order>, IOrderRepository
     {
         public OrderRepository(
             IOrderAuthorizationRepository orderAuthorizationRepository,
@@ -24,7 +26,7 @@ namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
         public IOrderAuthorizationRepository OrderAuthorizationRepository { get; }
         public IAuthorizationRepository AuthorizationRepository { get; }
 
-        public override DbSet<Order> Records => Context.Orders;
+        public override DbSet<Models.Order> Records => Context.Orders;
 
         public ICertificate CreateCertificate(X509Certificate2 cert)
         {
@@ -53,5 +55,20 @@ namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
                 .OrderByDescending(o => o.Id)
                 .FirstOrDefault(o => o.Identifier == identifier && o.AccountId == accountId);
         }
+
+        public IOrderList GetList(int accountId, OrderListParams @params, int size)
+        {
+            var items = Records.Where(o => o.AccountId == accountId);
+            items = items.Skip(@params.Page * size);
+            var count = items.Count();
+            var orders = items.Take(size).ToArray();
+
+            return new Models.OrderList
+            {
+                Orders = orders,
+                NextPage = count > size,
+            };
+        }
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using PeculiarVentures.ACME.Protocol;
@@ -27,6 +28,7 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             return new AcmeRequest(token)
             {
                 Method = Request.Method,
+                Query = GetQuery(),
             };
         }
 
@@ -35,7 +37,21 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             return new AcmeRequest()
             {
                 Method = Request.Method,
+                Query = GetQuery(),
             };
+        }
+
+        private Query GetQuery()
+        {
+            var query = new Query();
+            if (Request.QueryString.HasValue)
+            {
+                foreach (var item in Request.Query)
+                {
+                    query.Add(item.Key, item.Value);
+                }
+            }
+            return query;
         }
 
         protected ActionResult CreateActionResult(AcmeResponse response)
@@ -50,14 +66,11 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
 
             #region Add Link header
             var directoryLink = new Uri(BaseUri, "directory");
-            Response.Headers.Add(
-                "Link",
-                new LinkHeader(directoryLink.ToString(), new LinkHeaderItem("rel", "index", true)).ToString());
+            response.Links.Add(
+                new LinkHeader(directoryLink.ToString(), new LinkHeaderItem("rel", "index", true)));
 
-            foreach (LinkHeader link in response.Links)
-            {
-                Response.Headers.Add("Link", link.ToString());
-            }
+            var links = response.Links.Select(o => o.ToString()).ToArray();
+            Response.Headers.Add("Link", links);
             #endregion
 
             #region Add Loacation header
@@ -141,6 +154,19 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             return CreateActionResult(response);
         }
 
+        [Route("orders")]
+        [HttpPost]
+        public ActionResult PostOrders([FromBody]JsonWebSignature token)
+        {
+            var response = Controller.PostOrders(GetAcmeRequest(token));
+
+            ProcessOrders(response);
+
+            return CreateActionResult(response);
+        }
+
+
+
         [Route("authz/{id:int}")]
         [HttpPost]
         public ActionResult PostAuthz([FromBody]JsonWebSignature token, int id)
@@ -183,6 +209,14 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             ProcessOrder(response);
 
             return CreateActionResult(response);
+        }
+
+        protected void ProcessOrders(AcmeResponse response)
+        {
+            if (response.Content is OrderList orderList)
+            {
+                orderList.Orders = orderList.Orders.Select(o => $"{BaseUri}order/{o}").ToArray();
+            }
         }
 
         protected void ProcessOrder(AcmeResponse response)

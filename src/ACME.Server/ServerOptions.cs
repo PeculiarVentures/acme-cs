@@ -10,5 +10,6 @@ namespace PeculiarVentures.ACME.Server
         public string BaseAddress { get; set; }
         public int ExpireAuthorizationDays { get; set; } = 7;
         public ExternalAccountOptions ExternalAccountOptions { get; set; } = new ExternalAccountOptions();
+        public int OrdersPageSize { get; set; } = 10;
     }
 }

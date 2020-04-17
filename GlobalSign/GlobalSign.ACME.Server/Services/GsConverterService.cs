@@ -30,18 +30,14 @@ namespace GlobalSign.ACME.Server.Services
                   externalAccountRepository,
                   options)
         {
+            Types.Add(typeof(PeculiarVentures.ACME.Protocol.Order), typeof(Order));
             Types.Add(typeof(PeculiarVentures.ACME.Protocol.Messages.NewOrder), typeof(NewOrder));
             Types.Add(typeof(PeculiarVentures.ACME.Protocol.Messages.FinalizeOrder), typeof(FinalizeOrder));
         }
 
-        protected override PeculiarVentures.ACME.Protocol.Order OnToOrderConvertBefore(IOrder source)
+        protected override PeculiarVentures.ACME.Protocol.Order OnToOrderConvert(PeculiarVentures.ACME.Protocol.Order order, IOrder source)
         {
-            return new Order();
-        }
-
-        protected override PeculiarVentures.ACME.Protocol.Order OnToOrderConvert(PeculiarVentures.ACME.Protocol.Order order, IOrder source, IAuthorization[] authzs)
-        {
-            var gsOrder = (Order)base.OnToOrderConvert(order, source, authzs);
+            var gsOrder = (Order)base.OnToOrderConvert(order, source);
             var gsSource = (GsOrder)source;
             gsOrder.Template = gsSource.TemplateId == null
                 ? null
