@@ -7,6 +7,7 @@ using System.Linq;
 using System;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Protocol.Messages;
+using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
 {
@@ -56,10 +57,17 @@ namespace PeculiarVentures.ACME.Server.Data.EF.Core.Repositories
                 .FirstOrDefault(o => o.Identifier == identifier && o.AccountId == accountId);
         }
 
-        public IOrderList GetList(int accountId, OrderListParams @params, int size)
+        public IOrderList GetList(int accountId, Query @params, int size)
         {
-            var items = Records.Where(o => o.AccountId == accountId);
-            items = items.Skip(@params.Page * size);
+            var items = Records.Where(o => o.AccountId == accountId && o.Status != OrderStatus.Invalid);
+
+            int page = 0;
+            if (@params.ContainsKey("cursor"))
+            {
+                page = int.Parse(@params["cursor"].FirstOrDefault());
+            }
+
+            items = items.Skip(page * size);
             var count = items.Count();
             var orders = items.Take(size).ToArray();
 

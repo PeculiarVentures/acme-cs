@@ -133,6 +133,15 @@ namespace PeculiarVentures.ACME.Server.AspNet
             return CreateHttpResponseMessage(response);
         }
 
+        public virtual HttpResponseMessage PostOrders(JsonWebSignature token)
+        {
+            var response = Controller.PostOrders(GetAcmeRequest(token));
+
+            ProcessOrder(response);
+
+            return CreateHttpResponseMessage(response);
+        }
+
         private void ProcessOrder(AcmeResponse response)
         {
             if (response.Content is Order order)

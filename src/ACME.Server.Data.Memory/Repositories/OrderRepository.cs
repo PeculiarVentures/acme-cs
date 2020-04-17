@@ -41,7 +41,7 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
 
         public IOrderList GetList(int accountId, Query @params, int size)
         {
-            var items = Items.Where(o => o.AccountId == accountId);
+            var items = Items.Where(o => o.AccountId == accountId && o.Status != Protocol.OrderStatus.Invalid);
 
             int page = 0;
             if (@params.ContainsKey("cursor"))
