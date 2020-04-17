@@ -5,12 +5,13 @@
     <RootNamespace>PeculiarVentures.ACME.Server.Data.Abstractions</RootNamespace>
     <AssemblyName>PeculiarVentures.ACME.Server.Data.Abstractions</AssemblyName>
     <PackageId>PeculiarVentures.ACME.Server.Data.Abstraction</PackageId>
-    <PackageVersion>0.1</PackageVersion>
     <Authors>PeculiarVentures</Authors>
     <Copyright>PeculiarVentures</Copyright>
     <Owners>PeculiarVentures</Owners>
     <Title>PeculiarVentures.ACME.Server.Data.Abstraction</Title>
     <Description>ACME Data abstraction library</Description>
+    <ReleaseVersion>0.1.1</ReleaseVersion>
+    <PackageVersion>0.1.1</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">

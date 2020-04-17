@@ -6,6 +6,8 @@
   <Version>$version$</Version>
   <AssemblyVersion>1.0.0.0</AssemblyVersion>
   <FileVersion>1.0.0.*</FileVersion>
+  <ReleaseVersion>0.1.1</ReleaseVersion>
+  <PackageVersion>0.1.1</PackageVersion>
 </PropertyGroup>
 
 <PropertyGroup>
@@ -17,7 +19,6 @@
     <RootNamespace>PeculiarVentures.ACME</RootNamespace>
     <AssemblyName>PeculiarVentures.ACME.Core</AssemblyName>
     <PackageId>PeculiarVentures.ACME.Core</PackageId>
-    <PackageVersion>0.1</PackageVersion>
     <Authors>PeculiarVentures</Authors>
     <Description>ACME Core library</Description>
     <Copyright>PeculiarVentures</Copyright>

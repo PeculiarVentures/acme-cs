@@ -4,13 +4,14 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>PeculiarVentures.ACME.Server.AspNetCore</RootNamespace>
     <AssemblyName>PeculiarVentures.ACME.Server.AspNetCore</AssemblyName>
-    <PackageVersion>0.1</PackageVersion>
     <Copyright>PeculiarVentures</Copyright>
     <Owners>PeculiarVentures</Owners>
     <Description>ACME ASP.NET Core server</Description>
     <PackageId>PeculiarVentures.ACME.Server.AspNetCore</PackageId>
     <Authors>PeculiarVentures</Authors>
     <Title>PeculiarVentures.ACME.Server.AspNetCore</Title>
+    <ReleaseVersion>0.1.1</ReleaseVersion>
+    <PackageVersion>0.1.1</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -5,9 +5,10 @@
     <RootNamespace>PeculiarVentures.ACME.Client</RootNamespace>
     <AssemblyName>PeculiarVentures.ACME.Client</AssemblyName>
     <PackageId>PeculiarVentures.ACME.Client</PackageId>
-    <PackageVersion>0.1</PackageVersion>
     <Authors>PeculiarVentures.ACME.Client</Authors>
     <Description>ACME Client</Description>
+    <ReleaseVersion>0.1.1</ReleaseVersion>
+    <PackageVersion>0.1.1</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
