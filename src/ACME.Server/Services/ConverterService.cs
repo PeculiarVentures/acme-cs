@@ -182,9 +182,9 @@ namespace PeculiarVentures.ACME.Server.Services
             return OnToOrderConvert(result, data);
         }
         
-        public OrderList ToOrderList(IOrder[] orders)
+        public Protocol.OrderList ToOrderList(IOrder[] orders)
         {
-            var orderList = new OrderList();
+            var orderList = new Protocol.OrderList();
 
             var ordersId = orders.Select(o => o.Id.ToString());
             orderList.Orders = ordersId.ToArray();

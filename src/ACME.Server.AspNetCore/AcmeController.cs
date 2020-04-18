@@ -213,7 +213,7 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
 
         protected void ProcessOrders(AcmeResponse response)
         {
-            if (response.Content is OrderList orderList)
+            if (response.Content is Protocol.OrderList orderList)
             {
                 orderList.Orders = orderList.Orders.Select(o => $"{BaseUri}order/{o}").ToArray();
             }

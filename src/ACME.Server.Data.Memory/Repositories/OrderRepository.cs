@@ -53,7 +53,8 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Repositories
             var count = items.Count();
             var orders = items.Take(size).ToArray();
 
-            return new OrderList {
+            return new OrderList
+            {
                 Orders = orders,
                 NextPage = count > size,
             };
