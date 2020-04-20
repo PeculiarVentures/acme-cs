@@ -52,22 +52,22 @@ namespace PeculiarVentures.ACME.Server.Services
         /// Assign values from IAccount to JSON account.
         /// For expended objects need add assign values
         /// </summary>
-        /// <param name="order"></param>
+        /// <param name="account"></param>
         /// <param name="data"></param>
-        protected virtual Account OnToAccountConvert(Account order, IAccount data)
+        protected virtual Account OnToAccountConvert(Account account, IAccount data)
         {
-            order.Id = data.Id;
-            order.Contacts = data.Contacts.ToArray();
-            order.Status = data.Status;
-            order.TermsOfServiceAgreed = data.TermsOfServiceAgreed;
-            order.Key = data.Key;
-            order.CreatedAt = data.CreatedAt;
-            order.Orders = new Uri(new Uri(Options.BaseAddress), "orders").ToString();
+            account.Id = data.Id;
+            account.Contacts = data.Contacts.ToArray();
+            account.Status = data.Status;
+            account.TermsOfServiceAgreed = data.TermsOfServiceAgreed;
+            account.Key = data.Key;
+            account.CreatedAt = data.CreatedAt;
+            account.Orders = new Uri(new Uri(Options.BaseAddress), "orders").ToString();
             if (data.ExternalAccountId != null)
             {
-                order.ExternalAccountBinding = ExternalAccountRepository.GetById(data.ExternalAccountId.Value).Account;
+                account.ExternalAccountBinding = ExternalAccountRepository.GetById(data.ExternalAccountId.Value).Account;
             }
-            return order;
+            return account;
         }
         #endregion
 
@@ -224,7 +224,7 @@ namespace PeculiarVentures.ACME.Server.Services
         private T CreateInstance<T>()
             where T : class, new()
         {
-            var type = GetType<Order>();
+            var type = GetType<T>();
             var obj = (T)Activator.CreateInstance(type);
             return obj;
         }
