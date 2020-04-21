@@ -176,19 +176,20 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <returns></returns>
         public Order ToOrder(IOrder data)
         {
-            
             var result = CreateInstance<Order>();
-
             return OnToOrderConvert(result, data);
         }
         
         public Protocol.OrderList ToOrderList(IOrder[] orders)
         {
-            var orderList = new Protocol.OrderList();
+            var orderList = CreateInstance<Protocol.OrderList>();
+            return OnToOrderListConvert(orderList, orders);
+        }
 
-            var ordersId = orders.Select(o => o.Id.ToString());
+        protected virtual Protocol.OrderList OnToOrderListConvert(Protocol.OrderList orderList, IOrder[] orders)
+        {
+            var ordersId = orders.Select(o => $"{Options.BaseAddress}/order/{o.Id}");
             orderList.Orders = ordersId.ToArray();
-
             return orderList;
         }
 
