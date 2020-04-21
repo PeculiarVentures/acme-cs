@@ -42,9 +42,7 @@ namespace PeculiarVentures.ACME.Web
             }
         }
 
-        
-
-        public Query Query { get; set; }
+        public Query Query { get; set; } = new Query();
         public object Content { get; set; }
         public string Method { get; set; }
         public string Url

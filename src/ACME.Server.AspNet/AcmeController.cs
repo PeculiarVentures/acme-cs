@@ -43,7 +43,7 @@ namespace PeculiarVentures.ACME.Server.AspNet
                     result = Request.CreateResponse((HttpStatusCode)response.StatusCode);
                     var streamContent = new StreamContent(content.Content);
                     streamContent.Headers.Add("Content-Type", content.Type);
-                    result.Content = streamContent;   
+                    result.Content = streamContent;
                 }
                 else
                 {
@@ -93,7 +93,33 @@ namespace PeculiarVentures.ACME.Server.AspNet
             return new AcmeRequest(token)
             {
                 Method = Request.Method.Method,
+                Query = GetQuery(),
             };
+        }
+
+        private Query GetQuery()
+        {
+            var query = new Query();
+            var pairQuery = Request.GetQueryNameValuePairs();
+            if (pairQuery.Count() > 0)
+            {
+                foreach (var item in pairQuery)
+                {
+                    if (query.ContainsKey(item.Key))
+                    {
+                        var value = query[item.Key];
+                        var list = value.ToList();
+                        list.Add(item.Value);
+                        query[item.Key] = list.ToArray();
+                    }
+                    else
+                    {
+                        var value = new string[] { item.Value };
+                        query.Add(item.Key, value);
+                    }
+                }
+            }
+            return query;
         }
 
         public virtual HttpResponseMessage NewAccount(JsonWebSignature token)
