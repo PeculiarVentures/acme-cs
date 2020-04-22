@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -412,11 +414,37 @@ namespace PeculiarVentures.ACME.Client
         /// Download the issued certificate.
         /// </summary>
         /// <see cref="https://tools.ietf.org/html/rfc8555#section-7.4.2"/>
-        public async Task<byte[]> OrderCertificateGetAsync(string certificateUrl)
+        public async Task<AcmeResponse<X509Certificate2Collection>> OrderCertificateGetAsync(string certificateUrl)
         {
             var response = await Request(certificateUrl, HttpMethod.Post, "");
+            var chain = new X509Certificate2Collection();
+            var rawData = await response.Content.ReadAsByteArrayAsync();
 
-            return await response.Content.ReadAsByteArrayAsync();
+            switch (response.Content.Headers.ContentType.MediaType)
+            {
+                case "application/pkix-cert":
+                    chain.Add(new X509Certificate2(rawData));
+                    break;
+                case "application/pem-certificate-chain":
+                    var dec = Encoding.UTF8.GetString(rawData);
+                    chain.AddRange(PemConverter.Decode(dec).Select(o => new X509Certificate2(o)).ToArray());
+                    break;
+                case "application/pkcs7-mime":
+                    chain.Import(rawData);
+                    break;
+                default:
+                    throw new Exception("Wrong Content type");
+            }
+            var resp = new AcmeResponse<X509Certificate2Collection>()
+            {
+                StatusCode = (int)response.StatusCode,
+                // todo need upgrade
+                //ReplayNonce = replayNonceValues?.FirstOrDefault(),
+                //Location = locationValues?.FirstOrDefault(),
+                //Links = linksValues != null ? new LinkHeaderCollection(linksValues.ToArray()) : null,
+                Content = chain,
+            };
+            return resp;
         }
 
         /// <summary>
