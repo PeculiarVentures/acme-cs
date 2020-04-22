@@ -366,7 +366,7 @@ namespace PeculiarVentures.ACME.Client
                     Assert.NotEmpty(orderFinal.Content.Certificate);
 
                     var certificatePemBytes = await client.OrderCertificateGetAsync(orderFinal.Content.Certificate);
-                    var certificate = new X509Certificate2(certificatePemBytes);
+                    var certificate = new X509Certificate2(certificatePemBytes.Content[0]);
 
                     await client.CertificateRevokeAsync(new RevokeCertificate { Certificate = Base64Url.Encode(certificate.Export(X509ContentType.Cert)) });
                 }
