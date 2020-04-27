@@ -29,5 +29,14 @@ namespace PeculiarVentures.ACME.Web
         {
             Content = new MemoryStream(content);
         }
+
+        public byte[] ToArray()
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                Content.CopyTo(ms);
+                return ms.ToArray();
+            }
+        }
     }
 }

@@ -7,7 +7,7 @@
   <AssemblyVersion>1.0.0.0</AssemblyVersion>
   <FileVersion>1.0.0.*</FileVersion>
   <PackageVersion>0.1.10</PackageVersion>
-  <ReleaseVersion>0.1.10</ReleaseVersion>
+  <ReleaseVersion>0.1.11</ReleaseVersion>
 </PropertyGroup>
 
 <PropertyGroup>

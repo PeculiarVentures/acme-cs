@@ -82,7 +82,7 @@ namespace PeculiarVentures.ACME.Client
             return client;
         }
 
-        protected async Task<HttpResponseMessage> Request(
+        protected async Task<AcmeResponse> Request(
             string url,
             HttpMethod method = null,
             object payload = null,
@@ -145,7 +145,8 @@ namespace PeculiarVentures.ACME.Client
 
                 try
                 {
-                    var error = await Deserialize<Protocol.Error>(response);
+                    var errorJson = await response.Content.ReadAsStringAsync();
+                    var error = JsonConvert.DeserializeObject<Protocol.Error>(errorJson);
 
                     message = $"{error.Type}: {error.Detail}";
                 }
@@ -162,21 +163,34 @@ namespace PeculiarVentures.ACME.Client
 
                 var ex = new AcmeException(Protocol.ErrorType.ServerInternal, message);
 
-                Logger.Error(ex, $"{nameof(AcmeClient)} request error.");
+                Logger.Error(ex);
 
                 throw ex;
             }
 
             response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
+            response.Headers.TryGetValues("location", out var locationValues);
+            response.Headers.TryGetValues("link", out var linksValues);
 
             if (replayNonceValues != null)
             {
                 Nonce = replayNonceValues.FirstOrDefault();
             }
 
-            Logger.Debug("Response {@response}", response);
+            var acmeResponse = new AcmeResponse
+            {
+                StatusCode = (int)response.StatusCode,
+                ReplayNonce = replayNonceValues?.FirstOrDefault(),
+                Location = locationValues?.FirstOrDefault(),
+                Links = linksValues != null ? new LinkHeaderCollection(linksValues.ToArray()) : null,
+                Content = new MediaTypeContent(
+                    response.Content.Headers.ContentType.MediaType,
+                    await response.Content.ReadAsByteArrayAsync()),
+            };
 
-            return response;
+            Logger.Debug("Response {@response}", acmeResponse);
+
+            return acmeResponse;
         }
 
         protected async Task<AcmeResponse> Request(
@@ -188,23 +202,8 @@ namespace PeculiarVentures.ACME.Client
         )
         {
             var response = await Request(url, method, payload, includePublicKey);
-
-            response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
-            response.Headers.TryGetValues("location", out var locationValues);
-            response.Headers.TryGetValues("link", out var linksValues);
-
-            var acmeResponse = new AcmeResponse
-            {
-                StatusCode = (int)response.StatusCode,
-                ReplayNonce = replayNonceValues?.FirstOrDefault(),
-                Location = locationValues?.FirstOrDefault(),
-                Links = linksValues != null ? new LinkHeaderCollection(linksValues.ToArray()) : null,
-                Content = await Deserialize(response, type),
-            };
-
-            Logger.Debug("Response {@response}", response);
-
-            return acmeResponse;
+            response.Content = Deserialize((MediaTypeContent)response.Content, type);
+            return response;
         }
 
         protected async Task<AcmeResponse<T>> Request<T>(
@@ -215,35 +214,24 @@ namespace PeculiarVentures.ACME.Client
         ) where T : class
         {
             var response = await Request(url, method, payload, includePublicKey);
+            response.Content = Deserialize<T>((MediaTypeContent)response.Content);
 
-            response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
-            response.Headers.TryGetValues("location", out var locationValues);
-            response.Headers.TryGetValues("links", out var linksValues);
-
-            var acmeResponse = new AcmeResponse<T>
-            {
-                StatusCode = (int)response.StatusCode,
-                ReplayNonce = replayNonceValues?.FirstOrDefault(),
-                Location = locationValues?.FirstOrDefault(),
-                Links = linksValues != null ? new LinkHeaderCollection(linksValues.ToArray()) : null,
-                Content = await Deserialize<T>(response),
-            };
-
-            Logger.Debug("Response {@response}", response);
-
-            return acmeResponse;
+            return response;
         }
 
-        protected async Task<object> Deserialize(HttpResponseMessage response, Type type)
+        protected object Deserialize(MediaTypeContent content, Type type)
         {
-            var content = await response.Content.ReadAsStringAsync();
+            var text = Encoding.UTF8.GetString(content.ToArray());
+            var json = JsonConvert.DeserializeObject(text, type);
 
-            return JsonConvert.DeserializeObject(content, type);
+            Logger.Debug("Response.Content.JSON: {@json}", json);
+
+            return json;
         }
 
-        protected async Task<T> Deserialize<T>(HttpResponseMessage response)
+        protected T Deserialize<T>(MediaTypeContent response)
         {
-            return (T)(await Deserialize(response, typeof(T)));
+            return (T)Deserialize(response, typeof(T));
         }
 
         /// <summary>
@@ -445,9 +433,10 @@ namespace PeculiarVentures.ACME.Client
 
             var response = await Request(certificateUrl, HttpMethod.Post, "");
             var chain = new X509Certificate2Collection();
-            var rawData = await response.Content.ReadAsByteArrayAsync();
+            var mediaContnet = (MediaTypeContent)response.Content;
+            var rawData = mediaContnet.ToArray();
 
-            switch (response.Content.Headers.ContentType.MediaType)
+            switch (mediaContnet.Type)
             {
                 case "application/pkix-cert":
                     chain.Add(new X509Certificate2(rawData));
