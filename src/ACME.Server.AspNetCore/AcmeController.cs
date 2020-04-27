@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Server.Controllers;
@@ -29,6 +30,7 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             {
                 Method = Request.Method,
                 Query = GetQuery(),
+                Path = UriHelper.GetDisplayUrl(Request),
             };
         }
 
@@ -38,6 +40,7 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             {
                 Method = Request.Method,
                 Query = GetQuery(),
+                Path = UriHelper.GetDisplayUrl(Request),
             };
         }
 
@@ -94,7 +97,7 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         [HttpGet]
         public ActionResult GetDirectory()
         {
-            var response = Controller.GetDirectory();
+            var response = Controller.GetDirectory(GetAcmeRequest());
             var directory = response.GetContent<Directory>();
 
             return CreateActionResult(response);
@@ -115,12 +118,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         {
             var response = Controller.CreateAccount(GetAcmeRequest(token));
 
-            if (response.Location != null)
-            {
-                // Complete Location
-                response.Location = new Uri(BaseUri, $"acct/{response.Location}").ToString();
-            }
-
             return CreateActionResult(response);
         }
 
@@ -138,8 +135,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         {
             var response = Controller.CreateOrder(GetAcmeRequest(token));
 
-            ProcessOrder(response);
-
             return CreateActionResult(response);
         }
 
@@ -148,8 +143,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         public ActionResult PostOrder([FromBody]JsonWebSignature token, int id)
         {
             var response = Controller.PostOrder(GetAcmeRequest(token), id);
-
-            ProcessOrder(response);
 
             return CreateActionResult(response);
         }
@@ -173,15 +166,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         {
             var response = Controller.PostAuthorization(GetAcmeRequest(token), id);
 
-            // fix URLs
-            if (response.Content is Authorization authz)
-            {
-                foreach (var challenge in authz.Challenges)
-                {
-                    challenge.Url = $"{BaseUri}challenge/{challenge.Url}";
-                }
-            }
-
             return CreateActionResult(response);
         }
 
@@ -190,12 +174,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         public ActionResult PostChallenge([FromBody]JsonWebSignature token, int id)
         {
             var response = Controller.PostChallenge(GetAcmeRequest(token), id);
-
-            // fix URLs
-            if (response.Content is Challenge challenge)
-            {
-                challenge.Url = $"{BaseUri}challenge/{challenge.Url}";
-            }
 
             return CreateActionResult(response);
         }
@@ -206,8 +184,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
         {
             var response = Controller.FinalizeOrder(GetAcmeRequest(token), id);
 
-            ProcessOrder(response);
-
             return CreateActionResult(response);
         }
 
@@ -216,19 +192,6 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             if (response.Content is Protocol.OrderList orderList)
             {
                 orderList.Orders = orderList.Orders.Select(o => $"{BaseUri}order/{o}").ToArray();
-            }
-        }
-
-        protected void ProcessOrder(AcmeResponse response)
-        {
-            if (response.Content is Order order)
-            {
-                order.Authorizations = order.Authorizations.Select(o => $"{BaseUri}authz/{o}").ToArray();
-                order.Finalize = $"{BaseUri}finalize/{order.Finalize}";
-                if (order.Certificate != null)
-                {
-                    order.Certificate = $"{BaseUri}cert/{order.Certificate}";
-                }
             }
         }
 

@@ -34,6 +34,8 @@ namespace PeculiarVentures.ACME.Server.Services
             //var tls = ChallengeService.Create(addedAuthz.Id, "tls-01");
             //var dns = ChallengeService.Create(addedAuthz.Id, "dns-01");
 
+            Logger.Info("Authorization {id} created", authz.Id);
+
             return addedAuthz;
         }
 
@@ -68,8 +70,11 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public IAuthorization GetById(int accountId, int authzId)
         {
-            var authz = AuthorizationRepository.GetById(authzId)
-                ?? throw new MalformedException("Authorization doesn't exist");
+            var authz = AuthorizationRepository.GetById(authzId);
+            if (authz == null)
+            {
+                throw new MalformedException("Authorization doesn't exist");
+            }
 
             if (authz.AccountId != accountId)
             {
@@ -107,6 +112,8 @@ namespace PeculiarVentures.ACME.Server.Services
                     AuthorizationRepository.Update(item);
                 }
             }
+
+            Logger.Info("Authorization {id} status updated to {status}", item.Id, item.Status);
 
             return item;
         }

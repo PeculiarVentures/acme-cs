@@ -37,6 +37,8 @@ namespace PeculiarVentures.ACME.Server.Services
             OnCreateParams(account, data, macKey);
             account = ExternalAccountRepository.Add(account);
 
+            Logger.Info("External account {id} created", account.Id);
+
             return account;
         }
 
@@ -91,6 +93,8 @@ namespace PeculiarVentures.ACME.Server.Services
                 : Protocol.ExternalAccountStatus.Invalid;
             ExternalAccountRepository.Update(externalAccount);
 
+            Logger.Info("External account {id} status updated to {status}", externalAccount.Id, externalAccount.Status);
+
             return externalAccount;
         }
 
@@ -108,6 +112,8 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 externalAccount.Status = Protocol.ExternalAccountStatus.Expired;
                 ExternalAccountRepository.Update(externalAccount);
+
+                Logger.Info("External account {id} status updated to {status}", externalAccount.Id, externalAccount.Status);
             }
             return externalAccount;
         }

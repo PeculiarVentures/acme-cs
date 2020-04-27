@@ -45,6 +45,10 @@ namespace PeculiarVentures.ACME.Web
         public Query Query { get; set; } = new Query();
         public object Content { get; set; }
         public string Method { get; set; }
+
+        /// <summary>
+        /// Returns Url header from Token
+        /// </summary>
         public string Url
         {
             get
@@ -57,6 +61,8 @@ namespace PeculiarVentures.ACME.Web
                 return null;
             }
         }
+
+        public string Path { get; set; }
 
         /// <summary>
         /// Converts content to specified type

@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
+using NLog;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
     public class BaseService
     {
+        protected ILogger Logger { get; } = LogManager.GetLogger("ACME.Service");
+
         public BaseService(IOptions<ServerOptions> options)
         {
             Options = options?.Value

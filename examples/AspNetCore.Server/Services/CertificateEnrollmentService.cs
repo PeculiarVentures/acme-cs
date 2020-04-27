@@ -74,10 +74,5 @@ namespace AspNetCore.Server.Services
                 // nothing
             });
         }
-
-        public void ArchiveKey(IOrder order, AsymmetricAlgorithm key)
-        {
-            // nothing
-        }
     }
 }

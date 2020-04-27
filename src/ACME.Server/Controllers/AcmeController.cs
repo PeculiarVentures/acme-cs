@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
+using NLog;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Protocol.Messages;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
@@ -41,6 +42,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         public IAuthorizationService AuthorizationService { get; }
         public IConverterService ConverterService { get; }
         public ServerOptions Options { get; }
+        protected ILogger Logger { get; } = LogManager.GetLogger("ACME.Controller");
 
         public AcmeResponse CreateResponse()
         {
@@ -57,90 +59,87 @@ namespace PeculiarVentures.ACME.Server.Controllers
         /// <param name="action">Action</param>
         /// <param name="request">ACME request. If presents wrapper validates JWS</param>
         /// <returns></returns>
-        public AcmeResponse WrapAction(Action<AcmeResponse> action, AcmeRequest request = null, bool UseJwk = false)
+        public AcmeResponse WrapAction(Action<AcmeResponse> action, AcmeRequest request, bool UseJwk = false)
         {
             var response = CreateResponse();
 
             try
             {
+                Logger.Info("Request {method} {path} {token}", request.Method, request.Path, request.Token);
 
-                if (request != null)
+                if (request.Method == "POST")
                 {
-                    if (request.Method == "POST")
+                    #region Check JWS
+                    IAccount account = null;
+
+                    // Parse JWT
+                    var token = request.Token;
+                    try
                     {
-                        #region Check JWS
-                        IAccount account = null;
-
-                        // Parse JWT
-                        var token = request.Token;
-                        try
+                        if (token == null)
                         {
-                            if (token == null)
-                            {
-                                throw new Exception("JSON Web Token is empty");
-                            }
+                            throw new Exception("JSON Web Token is empty");
                         }
-                        catch (Exception e)
-                        {
-                            throw new AcmeException(ErrorType.Unauthorized, "Cannot parse JSON Web Token", System.Net.HttpStatusCode.Unauthorized, e);
-                        }
-
-                        if (request.Url == null)
-                        {
-                            throw new UnauthorizedException("The JWS header MUST have 'url' field");
-                        }
-
-                        if (UseJwk)
-                        {
-                            if (request.Key == null)
-                            {
-                                throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'jwk' field", System.Net.HttpStatusCode.BadRequest);
-                            }
-                            if (!token.Verify())
-                            {
-                                throw new AcmeException(ErrorType.Unauthorized, "JWS signature is invalid", System.Net.HttpStatusCode.Unauthorized);
-                            }
-
-                            account = AccountService.FindByPublicKey(request.Key);
-                            // If a server receives a POST or POST-as-GET from a deactivated account, it MUST return an error response with status
-                            // code 401(Unauthorized) and type "urn:ietf:params:acme:error:unauthorized"
-                            if (account != null && account.Status != AccountStatus.Valid)
-                            {
-                                throw new UnauthorizedException($"Account is not valid. Status is '{account.Status}'");
-                            }
-                        }
-                        else
-                        {
-                            if (request.KeyId == null)
-                            {
-                                throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'kid' field", System.Net.HttpStatusCode.BadRequest);
-                            }
-
-                            account = AccountService.GetById(GetIdFromLink(request.KeyId));
-
-                            if (!token.Verify(account.Key.GetPublicKey()))
-                            {
-                                throw new AcmeException(ErrorType.Unauthorized, "JWS signature is invalid", System.Net.HttpStatusCode.Unauthorized);
-                            }
-
-                            // Once an account is deactivated, the server MUST NOT accept further
-                            // requests authorized by that account's key
-                            // https://tools.ietf.org/html/rfc8555#section-7.3.6
-                            if (account.Status != AccountStatus.Valid)
-                            {
-                                throw new UnauthorizedException($"Account is not valid. Status is '{account.Status}'");
-                            }
-                        }
-                        #endregion
-
-                        #region Check Nonce
-
-                        var nonce = request.Token.GetProtected().Nonce ?? throw new BadNonceException();
-                        NonceService.Validate(nonce);
-
-                        #endregion
+                    }
+                    catch (Exception e)
+                    {
+                        throw new AcmeException(ErrorType.Unauthorized, "Cannot parse JSON Web Token", System.Net.HttpStatusCode.Unauthorized, e);
                     }
 
+                    if (request.Url == null)
+                    {
+                        throw new UnauthorizedException("The JWS header MUST have 'url' field");
+                    }
+
+                    if (UseJwk)
+                    {
+                        if (request.Key == null)
+                        {
+                            throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'jwk' field", System.Net.HttpStatusCode.BadRequest);
+                        }
+                        if (!token.Verify())
+                        {
+                            throw new AcmeException(ErrorType.Unauthorized, "JWS signature is invalid", System.Net.HttpStatusCode.Unauthorized);
+                        }
+
+                        account = AccountService.FindByPublicKey(request.Key);
+                        // If a server receives a POST or POST-as-GET from a deactivated account, it MUST return an error response with status
+                        // code 401(Unauthorized) and type "urn:ietf:params:acme:error:unauthorized"
+                        if (account != null && account.Status != AccountStatus.Valid)
+                        {
+                            throw new UnauthorizedException($"Account is not valid. Status is '{account.Status}'");
+                        }
+                    }
+                    else
+                    {
+                        if (request.KeyId == null)
+                        {
+                            throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'kid' field", System.Net.HttpStatusCode.BadRequest);
+                        }
+
+                        account = AccountService.GetById(GetIdFromLink(request.KeyId));
+
+                        if (!token.Verify(account.Key.GetPublicKey()))
+                        {
+                            throw new AcmeException(ErrorType.Unauthorized, "JWS signature is invalid", System.Net.HttpStatusCode.Unauthorized);
+                        }
+
+                        // Once an account is deactivated, the server MUST NOT accept further
+                        // requests authorized by that account's key
+                        // https://tools.ietf.org/html/rfc8555#section-7.3.6
+                        if (account.Status != AccountStatus.Valid)
+                        {
+                            throw new UnauthorizedException($"Account is not valid. Status is '{account.Status}'");
+                        }
+                    }
+                    #endregion
+
+                    #region Check Nonce
+
+                    var nonce = request.Token.GetProtected().Nonce ?? throw new BadNonceException();
+                    NonceService.Validate(nonce);
+
+                    #endregion
                 }
 
                 // Invoke action
@@ -151,23 +150,28 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 response.StatusCode = (int)e.StatusCode;
                 Error error = e;
                 response.Content = error;
+                Logger.Error(e);
             }
             catch (Exception e)
             {
                 response.StatusCode = 500; // Internal Server Error
                 Error error = e;
                 response.Content = error;
+                Logger.Error(e);
             }
+
+            Logger.Info("Response {@response}", response);
+
             return response;
         }
 
-        public AcmeResponse GetDirectory()
+        public AcmeResponse GetDirectory(AcmeRequest request)
         {
             return WrapAction((response) =>
             {
                 response.Content = DirectoryService.GetDirectory();
                 response.StatusCode = 200; // Ok
-            });
+            }, request);
         }
 
         public AcmeResponse GetNonce(AcmeRequest request)
@@ -180,7 +184,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 {
                     response.StatusCode = 204; // No content
                 }
-            });
+            }, request);
         }
 
         /// <summary>
@@ -254,8 +258,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     }
                 }
 
-                // Set headers
-                response.Location = $"{account.Id}";
+                response.Location = $"{Options.BaseAddress}/acct/{account.Id}";
             }, request, true);
         }
 
@@ -287,6 +290,8 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 {
                     response.Content = account;
                 }
+
+                response.Location = $"{Options.BaseAddress}/acct/{account.Id}";
             }, request);
         }
 
@@ -386,7 +391,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 }
                 response.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
                 response.Content = ConverterService.ToOrder(order);
-            });
+            }, request);
         }
 
         public AcmeResponse PostOrder(AcmeRequest request, int orderId)

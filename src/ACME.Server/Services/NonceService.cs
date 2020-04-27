@@ -20,7 +20,9 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public string Create()
         {
-            return NonceRepository.Create();
+            var nonce = NonceRepository.Create();
+
+            return nonce;
         }
 
         public void Validate(string nonce)

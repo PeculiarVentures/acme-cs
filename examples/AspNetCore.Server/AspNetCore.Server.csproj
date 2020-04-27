@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <ReleaseVersion>0.1.6</ReleaseVersion>
+    <ReleaseVersion>0.1.8</ReleaseVersion>
   </PropertyGroup>
 
 
@@ -22,5 +22,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.1" />
+    <PackageReference Include="NLog.Schema" Version="4.7.0" />
+    <PackageReference Include="NLog.Config" Version="4.7.0" />
   </ItemGroup>
 </Project>

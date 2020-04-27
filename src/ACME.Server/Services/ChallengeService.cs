@@ -38,6 +38,8 @@ namespace PeculiarVentures.ACME.Server.Services
 
             ChallengeRepository.Add(challenge);
 
+            Logger.Info("Challenge {id} created", challenge.Id);
+
             return challenge;
         }
 
@@ -59,12 +61,22 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public IChallenge[] GetByAuthorization(int id)
         {
-            return ChallengeRepository.GetByAuthorization(id) ?? throw new MalformedException("Challenge does not exist");
+            var chall = ChallengeRepository.GetByAuthorization(id);
+            if (chall == null)
+            {
+                throw new MalformedException("Challenge does not exist");
+            }
+            return chall;
         }
 
         public IChallenge GetById(int id)
         {
-            return ChallengeRepository.GetById(id) ?? throw new MalformedException("Challenge does not exist");
+            var chall = ChallengeRepository.GetById(id);
+            if (chall == null)
+            {
+                throw new MalformedException("Challenge does not exist");
+            }
+            return chall;
         }
 
         public void Validate(IChallenge challenge)
@@ -73,7 +85,9 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 challenge.Status = ChallengeStatus.Processing;
                 ChallengeRepository.Update(challenge);
-                
+
+                Logger.Info("Challenge {id} status updated to {status}", challenge.Id, challenge.Status);
+
                 Task
                     .Run(() =>
                     {
@@ -107,6 +121,8 @@ namespace PeculiarVentures.ACME.Server.Services
                                 ChallengeRepository.Update(challenge);
                             }
                         }
+
+                        Logger.Info("Challenge {id} status updated to {status}", challenge.Id, challenge.Status);
                     });
             }
             else
@@ -145,6 +161,8 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 throw new Exception("Respons status is not 200(OK)");
             }
+#else
+            Logger.Warn("HTTP challenge validation is disabled fo DEBUG mode");
 #endif
         }
 

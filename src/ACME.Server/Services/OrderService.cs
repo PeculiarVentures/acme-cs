@@ -7,12 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Org.BouncyCastle.Asn1;
-using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Cms;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Security;
 using PeculiarVentures.ACME.Cryptography;
 using PeculiarVentures.ACME.Helpers;
 using PeculiarVentures.ACME.Protocol;
@@ -84,9 +78,12 @@ namespace PeculiarVentures.ACME.Server.Services
             var order = OrderRepository.Create();
             OnCreateParams(order, @params, accountId);
             order = OrderRepository.Add(order);
-            OnCreatAuth(order, @params);
+            OnCreateAuth(order, @params);
             order.Identifier = ComputerIdentifier(@params.Identifiers.ToArray(), IDENTIFIER_HASH);
             order = OrderRepository.Update(order);
+
+            Logger.Info("Order {id} created", order.Id);
+
             return order;
         }
 
@@ -109,7 +106,7 @@ namespace PeculiarVentures.ACME.Server.Services
         /// </summary>
         /// <param name="order"></param>
         /// <param name="params"></param>
-        protected virtual void OnCreatAuth(IOrder order, NewOrder @params)
+        protected virtual void OnCreateAuth(IOrder order, NewOrder @params)
         {
             var listDate = new List<DateTime>();
             foreach (var identifier in @params.Identifiers)
@@ -156,6 +153,8 @@ namespace PeculiarVentures.ACME.Server.Services
             order.Status = OrderStatus.Processing;
             OrderRepository.Update(order);
 
+            Logger.Info("Order {id} status updated to {status}", order.Id, order.Status);
+
             var result = OnEnrollCertificateBefore(order, @params);
 
             Task
@@ -189,8 +188,12 @@ namespace PeculiarVentures.ACME.Server.Services
                         {
                             order.Status = OrderStatus.Valid;
                             OrderRepository.Update(order);
+
+                            Logger.Info("Certificate {thumbprint} for Order {id} issued successfully", order.Certificate.Thumbprint, order.Id);
                         }
                     }
+
+                    Logger.Info("Order {id} status updated to {status}", order.Id, order.Status);
                 });
 
             return order;
@@ -205,7 +208,11 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public IOrder GetById(int accountId, int id)
         {
-            var order = OrderRepository.GetById(id) ?? throw new MalformedException("Order not found");
+            var order = OrderRepository.GetById(id);
+            if (order == null)
+            {
+                throw new MalformedException("Order not found");
+            }
             if (order.AccountId != accountId)
             {
                 throw new MalformedException("Access denied");
@@ -216,7 +223,8 @@ namespace PeculiarVentures.ACME.Server.Services
         public IOrder LastByIdentifiers(int accountId, Identifier[] identifiers)
         {
             var identifier = ComputerIdentifier(identifiers, IDENTIFIER_HASH);
-            return OrderRepository.LastByIdentifier(accountId, identifier);
+            var order = OrderRepository.LastByIdentifier(accountId, identifier);
+            return order;
         }
 
         public IOrder GetActual(int accountId, NewOrder @params)
@@ -261,14 +269,21 @@ namespace PeculiarVentures.ACME.Server.Services
 
                 // Update repository
                 OrderRepository.Update(order);
+
+                Logger.Info("Order {id} status updated to {status}", order.Id, order.Status);
             }
 
-            return order != null
+            if (order != null
                 && (order.Status == OrderStatus.Pending
                 || order.Status == OrderStatus.Ready
-                || order.Status == OrderStatus.Processing)
-                ? order
-                : null;
+                || order.Status == OrderStatus.Processing))
+            {
+                return order;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public IOrder GetByCertificate(int accountId, X509Certificate2 x509)
@@ -282,7 +297,7 @@ namespace PeculiarVentures.ACME.Server.Services
             var order = OrderRepository.GetByThumbprint(thumbprint);
             if (order == null)
             {
-                throw new MalformedException("Certificate not found");
+                throw new MalformedException("Order not found");
             }
             if (order.AccountId != accountId)
             {
@@ -304,7 +319,6 @@ namespace PeculiarVentures.ACME.Server.Services
             }
             if (!chain.Build(new X509Certificate2(order.Certificate.RawData)))
             {
-                // TODO Write WARN that cannot build a cert chain
             }
 
             var res = new List<ICertificate>();
@@ -339,11 +353,14 @@ namespace PeculiarVentures.ACME.Server.Services
 
             order.Certificate.Revoked = true;
             OrderRepository.Update(order);
+
+            Logger.Info("Certificate {thumbprint} revoked", order.Certificate.Thumbprint);
         }
 
         public IOrderList GetList(int accountId, Query @params)
         {
-            return OrderRepository.GetList(accountId, @params, Options.OrdersPageSize);
+            var orderList = OrderRepository.GetList(accountId, @params, Options.OrdersPageSize);
+            return orderList;
         }
     }
 }

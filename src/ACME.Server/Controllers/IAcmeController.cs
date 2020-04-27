@@ -8,7 +8,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         ServerOptions Options { get; }
         AcmeResponse CreateAccount(AcmeRequest request);
         AcmeResponse CreateOrder(AcmeRequest request);
-        AcmeResponse GetDirectory();
+        AcmeResponse GetDirectory(AcmeRequest request);
         AcmeResponse GetNonce(AcmeRequest request);
         AcmeResponse PostAccount(AcmeRequest request);
         AcmeResponse PostOrder(AcmeRequest request, int orderId);

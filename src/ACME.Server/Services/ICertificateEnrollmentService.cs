@@ -12,7 +12,6 @@ namespace PeculiarVentures.ACME.Server.Services
 {
   public interface ICertificateEnrollmentService
   {
-    void ArchiveKey(IOrder order, AsymmetricAlgorithm key);
     Task<X509Certificate2> Enroll(IOrder order, Pkcs10CertificateRequest request);
     Task Revoke(IOrder order, Protocol.RevokeReason reason);
   }

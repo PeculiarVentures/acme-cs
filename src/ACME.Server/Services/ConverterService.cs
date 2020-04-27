@@ -97,7 +97,7 @@ namespace PeculiarVentures.ACME.Server.Services
             chall.Validated = data.Validated;
             chall.Error = data.Error != null ? ToError(data.Error) : null;
             chall.Token = data.Token;
-            chall.Url = data.Id.ToString();
+            chall.Url = $"{Options.BaseAddress}/challenge/{data.Id}";
             return chall;
         }
         #endregion
@@ -209,14 +209,14 @@ namespace PeculiarVentures.ACME.Server.Services
 
             order.Identifiers = authzs.Select(o =>
                     new Identifier(o.Identifier.Type, o.Identifier.Value)).ToArray();
-            order.Authorizations = authzs.Select(o => $"{o.Id}").ToArray();
+            order.Authorizations = authzs.Select(o => $"{Options.BaseAddress}/authz/{o.Id}").ToArray();
             order.Status = data.Status;
             order.NotBefore = data.NotBefore;
             order.NotAfter = data.NotAfter;
             order.Expires = data.Expires;
             order.Error = data.Error == null ? null : ToError(data.Error);
-            order.Finalize = $"{data.Id}";
-            order.Certificate = data.Certificate?.RawData == null ? null : $"{data.Certificate.Thumbprint}";
+            order.Finalize = $"{Options.BaseAddress}/finalize/{data.Id}";
+            order.Certificate = data.Certificate?.RawData == null ? null : $"{Options.BaseAddress}/cert/{data.Certificate.Thumbprint}";
             return order;
         }
         #endregion

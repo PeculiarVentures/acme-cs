@@ -26,7 +26,7 @@ namespace PeculiarVentures.ACME.Server.AspNet
 
         public virtual HttpResponseMessage GetDirectory()
         {
-            var response = Controller.GetDirectory();
+            var response = Controller.GetDirectory(GetAcmeRequest());
             var directory = response.GetContent<Directory>();
 
             return CreateHttpResponseMessage(response);
@@ -85,6 +85,8 @@ namespace PeculiarVentures.ACME.Server.AspNet
             return new AcmeRequest
             {
                 Method = Request.Method.Method,
+                Query = GetQuery(),
+                Path = Request.RequestUri.ToString(),
             };
         }
 
@@ -94,6 +96,7 @@ namespace PeculiarVentures.ACME.Server.AspNet
             {
                 Method = Request.Method.Method,
                 Query = GetQuery(),
+                Path = Request.RequestUri.ToString(),
             };
         }
 
@@ -145,16 +148,12 @@ namespace PeculiarVentures.ACME.Server.AspNet
         {
             var response = Controller.CreateOrder(GetAcmeRequest(token));
 
-            ProcessOrder(response);
-
             return CreateHttpResponseMessage(response);
         }
 
         public virtual HttpResponseMessage PostOrder(JsonWebSignature token, int id)
         {
             var response = Controller.PostOrder(GetAcmeRequest(token), id);
-
-            ProcessOrder(response);
 
             return CreateHttpResponseMessage(response);
         }
@@ -163,36 +162,12 @@ namespace PeculiarVentures.ACME.Server.AspNet
         {
             var response = Controller.PostOrders(GetAcmeRequest(token));
 
-            ProcessOrder(response);
-
             return CreateHttpResponseMessage(response);
-        }
-
-        private void ProcessOrder(AcmeResponse response)
-        {
-            if (response.Content is Order order)
-            {
-                order.Authorizations = order.Authorizations.Select(o => $"{BaseUri}authz/{o}").ToArray();
-                order.Finalize = $"{BaseUri}finalize/{order.Finalize}";
-                if (order.Certificate != null)
-                {
-                    order.Certificate = $"{BaseUri}cert/{order.Certificate}";
-                }
-            }
         }
 
         public virtual HttpResponseMessage PostAuthz([FromBody]JsonWebSignature token, int id)
         {
             var response = Controller.PostAuthorization(GetAcmeRequest(token), id);
-
-            // fix URLs
-            if (response.Content is Protocol.Authorization authz)
-            {
-                foreach (var challenge in authz.Challenges)
-                {
-                    challenge.Url = $"{BaseUri}challenge/{challenge.Url}";
-                }
-            }
 
             return CreateHttpResponseMessage(response);
         }
@@ -201,20 +176,12 @@ namespace PeculiarVentures.ACME.Server.AspNet
         {
             var response = Controller.PostChallenge(GetAcmeRequest(token), id);
 
-            // fix URLs
-            if (response.Content is Challenge challenge)
-            {
-                challenge.Url = $"{BaseUri}challenge/{challenge.Url}";
-            }
-
             return CreateHttpResponseMessage(response);
         }
 
         public virtual HttpResponseMessage Finalize([FromBody]JsonWebSignature token, int id)
         {
             var response = Controller.FinalizeOrder(GetAcmeRequest(token), id);
-
-            ProcessOrder(response);
 
             return CreateHttpResponseMessage(response);
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.Options;
+using NLog;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Protocol.Messages;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
@@ -32,8 +33,13 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <returns></returns>
         public IAccount GetById(int id)
         {
-            return AccountRepository.GetById(id)
-                ?? throw new AccountDoesNotExistException();
+            var account = AccountRepository.GetById(id);
+            if (account == null)
+            {
+                throw new AccountDoesNotExistException();
+            }
+
+            return account;
         }
 
         /// <summary>
@@ -43,8 +49,14 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <returns></returns>
         public IAccount GetByPublicKey(JsonWebKey key)
         {
-            return FindByPublicKey(key)
-                ?? throw new AccountDoesNotExistException();
+            var account = FindByPublicKey(key);
+
+            if (account == null)
+            {
+                throw new AccountDoesNotExistException();
+            }
+
+            return account;
         }
 
         /// <summary>
@@ -108,6 +120,9 @@ namespace PeculiarVentures.ACME.Server.Services
             }
             // Adds account
             account = AccountRepository.Add(account);
+
+            Logger.Info("Account {id} created", account.Id);
+
             return account;
         }
 
@@ -142,6 +157,8 @@ namespace PeculiarVentures.ACME.Server.Services
             // Save changes
             account = AccountRepository.Update(account);
 
+            Logger.Info("Account {id} updated", account.Id);
+
             // Return JSON
             return account;
         }
@@ -157,6 +174,8 @@ namespace PeculiarVentures.ACME.Server.Services
             // Save changes
             account = AccountRepository.Update(account);
 
+            Logger.Info("Account {id} deactivated", account.Id);
+
             // Return JSON
             return account;
         }
@@ -171,6 +190,8 @@ namespace PeculiarVentures.ACME.Server.Services
 
             // Save changes
             account = AccountRepository.Update(account);
+
+            Logger.Info("Account {id} revoked", account.Id);
 
             // Return JSON
             return account;
@@ -199,6 +220,8 @@ namespace PeculiarVentures.ACME.Server.Services
 
             // Save changes
             AccountRepository.Update(account);
+
+            Logger.Info("Account {id} key changed", account.Id);
 
             // Return JSON
             return account;
