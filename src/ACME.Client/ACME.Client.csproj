@@ -7,7 +7,7 @@
     <PackageId>PeculiarVentures.ACME.Client</PackageId>
     <Authors>PeculiarVentures.ACME.Client</Authors>
     <Description>ACME Client</Description>
-    <PackageVersion>0.1.10</PackageVersion>
+    <PackageVersion>0.1.11</PackageVersion>
     <ReleaseVersion>0.1.11</ReleaseVersion>
   </PropertyGroup>
 

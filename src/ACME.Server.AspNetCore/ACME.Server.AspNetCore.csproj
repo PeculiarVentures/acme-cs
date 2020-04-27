@@ -11,7 +11,7 @@
     <Authors>PeculiarVentures</Authors>
     <Title>PeculiarVentures.ACME.Server.AspNetCore</Title>
     <ReleaseVersion>0.1.11</ReleaseVersion>
-    <PackageVersion>0.1.10</PackageVersion>
+    <PackageVersion>0.1.11</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
