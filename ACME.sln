@@ -26,9 +26,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACME.Server.Data.Abstractio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACME.Server.Data.Memory", "src\ACME.Server.Data.Memory\ACME.Server.Data.Memory.csproj", "{0D73A9BB-EB8F-4B53-AD84-052AD565B4C4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ACME.Client.Tests", "tests\ACME.Client.Tests\ACME.Client.Tests.csproj", "{452610AE-95B6-497C-9B5A-533028DDE37D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACME.Client.Tests", "tests\ACME.Client.Tests\ACME.Client.Tests.csproj", "{452610AE-95B6-497C-9B5A-533028DDE37D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.Server", "examples\AspNetCore.Server\AspNetCore.Server.csproj", "{0191CCD4-CDA0-4988-95FD-59E43EB3E917}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCore.Server", "examples\AspNetCore.Server\AspNetCore.Server.csproj", "{0191CCD4-CDA0-4988-95FD-59E43EB3E917}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACME.Server.AspNet", "src\ACME.Server.AspNet\ACME.Server.AspNet.csproj", "{40C54F7D-B182-48D1-83ED-EDC545581973}"
 EndProject
@@ -114,6 +114,6 @@ Global
 		SolutionGuid = {4C13AAC2-AAD6-47DB-AB74-7CED36055CCA}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		version = 0.1.8
+		version = 0.1.9
 	EndGlobalSection
 EndGlobal

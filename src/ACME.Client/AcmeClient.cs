@@ -7,8 +7,8 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NLog;
 using PeculiarVentures.ACME.Helpers;
 using PeculiarVentures.ACME.Web;
 using PeculiarVentures.ACME.Web.Http;
@@ -20,7 +20,7 @@ namespace PeculiarVentures.ACME.Client
     {
         private readonly HttpClient _http;
 
-        private readonly ILogger _logger;
+        protected ILogger Logger { get; } = LogManager.GetLogger("ACEM.Client");
 
         public AsymmetricAlgorithm Key { get; private set; }
 
@@ -61,23 +61,20 @@ namespace PeculiarVentures.ACME.Client
         }
         #endregion
 
-        protected AcmeClient(HttpClient http, AsymmetricAlgorithm key, ILogger logger = null)
+        protected AcmeClient(HttpClient http, AsymmetricAlgorithm key)
         {
             Key = key;
             _http = http;
-            _logger = logger;
-
-            _logger?.LogInformation($"{nameof(AcmeClient)} is starting.");
         }
 
-        public static async Task<AcmeClient> CreateAsync(Uri rootUrl, AsymmetricAlgorithm key, ILogger logger = null)
+        public static async Task<AcmeClient> CreateAsync(Uri rootUrl, AsymmetricAlgorithm key)
         {
-            return await CreateAsync(new HttpClient { BaseAddress = rootUrl }, key, logger);
+            return await CreateAsync(new HttpClient { BaseAddress = rootUrl }, key);
         }
 
-        public static async Task<AcmeClient> CreateAsync(HttpClient http, AsymmetricAlgorithm key, ILogger logger = null)
+        public static async Task<AcmeClient> CreateAsync(HttpClient http, AsymmetricAlgorithm key)
         {
-            var client = new AcmeClient(http, key, logger);
+            var client = new AcmeClient(http, key);
 
             await client.DirectoryGetAsync();
             await client.NonceGetAsync();
@@ -127,13 +124,13 @@ namespace PeculiarVentures.ACME.Client
                 content = JsonConvert.SerializeObject(jws, Formatting.Indented);
             }
 
-            if (!String.IsNullOrEmpty(content))
+            if (!string.IsNullOrEmpty(content))
             {
                 request.Content = new StringContent(content);
                 request.Content.Headers.ContentType = Protocol.MediaTypeHeader.JsonContentTypeHeaderValue;
             }
 
-            _logger?.LogDebug($"{nameof(AcmeClient)} request \nParameters: \n{request} \nContent: \n{content}");
+            Logger.Debug("Request {method} {path} {token}", method, url, content);
 
             var response = await _http.SendAsync(request);
 
@@ -153,8 +150,8 @@ namespace PeculiarVentures.ACME.Client
                 }
                 catch
                 {
-                    _logger?.LogError("Cannot parse ACME Error from Client response");
-                    _logger?.LogError(await response.Content.ReadAsStringAsync());
+                    Logger.Error("Cannot parse ACME Error from Client response");
+                    Logger.Debug(await response.Content.ReadAsStringAsync());
                 }
 
                 if (string.IsNullOrEmpty(message))
@@ -164,7 +161,7 @@ namespace PeculiarVentures.ACME.Client
 
                 var ex = new AcmeException(Protocol.ErrorType.ServerInternal, message);
 
-                _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
+                Logger.Error(ex, $"{nameof(AcmeClient)} request error.");
 
                 throw ex;
             }
@@ -175,6 +172,8 @@ namespace PeculiarVentures.ACME.Client
             {
                 Nonce = replayNonceValues.FirstOrDefault();
             }
+
+            Logger.Debug("Response {@response}", response);
 
             return response;
         }
@@ -202,7 +201,7 @@ namespace PeculiarVentures.ACME.Client
                 Content = await Deserialize(response, type),
             };
 
-            _logger?.LogDebug($"{nameof(AcmeClient)} response: \n{acmeResponse}");
+            Logger.Debug("Response {@response}", response);
 
             return acmeResponse;
         }
@@ -229,7 +228,7 @@ namespace PeculiarVentures.ACME.Client
                 Content = await Deserialize<T>(response),
             };
 
-            _logger?.LogDebug($"{nameof(AcmeClient)} response: \n{acmeResponse}");
+            Logger.Debug("Response {@response}", response);
 
             return acmeResponse;
         }
@@ -252,6 +251,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.1"/>
         public async Task<AcmeResponse<Protocol.Directory>> DirectoryGetAsync()
         {
+            Logger.Info("Getting Directory object");
+
             var response = await Request(GetType(typeof(Protocol.Directory)), "directory");
 
             Directory = (Protocol.Directory)response.Content;
@@ -265,6 +266,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.2"/>
         public async Task NonceGetAsync()
         {
+            Logger.Info("Getting Nonce value");
+
             await Request(Directory.NewNonce, HttpMethod.Head);
         }
 
@@ -274,13 +277,15 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountCreateAsync(Protocol.Messages.NewAccount account)
         {
+            Logger.Info("Creating a new ACME account. Params:{@params}", account);
+
             var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount, HttpMethod.Post, account, true);
 
             if (string.IsNullOrEmpty(response.Location))
             {
                 var ex = new AcmeException(Protocol.ErrorType.IncorrectResponse, "Account creation response does not include Location header.");
 
-                _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
+                Logger.Error(ex, $"{nameof(AcmeClient)} request error.");
 
                 throw ex;
             }
@@ -296,6 +301,12 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.5"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountCreateAsync(Protocol.Messages.NewAccount account, string kid, string keyMac)
         {
+            Logger.Info("Creating a new ACME account with external account binding. Params:{@params}", new {
+                Account = account,
+                KeyId = kid,
+                KeyMac = keyMac,
+            });
+
             var jws = new JsonWebSignature();
 
             jws.SetProtected(new JsonWebSignatureProtected
@@ -325,13 +336,15 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.4"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountUpdateAsync(Protocol.Messages.NewAccount account)
         {
+            Logger.Info("Updating an ACME account. Params:{@params}", account);
+
             var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount, HttpMethod.Post, account);
 
             if (string.IsNullOrEmpty(response.Location))
             {
                 var ex = new AcmeException(Protocol.ErrorType.IncorrectResponse, "Account updating response does not include Location header.");
 
-                _logger?.LogError(ex, $"{nameof(AcmeClient)} request error.");
+                Logger.Error(ex, $"{nameof(AcmeClient)} request error.");
 
                 throw ex;
             }
@@ -347,6 +360,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-18#section-7.3.5"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountChangeKeyAsync(AsymmetricAlgorithm keyNew)
         {
+            Logger.Info("Changing an ACME account key. Params:{@params}", keyNew);
+
             var jws = new JsonWebSignature();
             var jwk = new JsonWebKey(Key);
             var jwkNew = new JsonWebKey(keyNew);
@@ -377,6 +392,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.7"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountDeactivateAsync()
         {
+            Logger.Info("Deactivating an ACME account");
+
             return await Request(
                 GetType(typeof(Protocol.Account)),
                 Location,
@@ -392,6 +409,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3"/>
         public async Task<AcmeResponse<Protocol.Order>> OrderCreateAsync(Protocol.Messages.NewOrder order)
         {
+            Logger.Info("Creating a new ACME order. Params:{@params}", order);
+
             return await Request(GetType(typeof(Protocol.Order)), Directory.NewOrder, HttpMethod.Post, order);
         }
 
@@ -402,11 +421,15 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3"/>
         public async Task<AcmeResponse<Protocol.Order>> OrderGetAsync(string orderUrl)
         {
+            Logger.Info("Getting an ACME order. Params:{@params}", orderUrl);
+
             return await Request(GetType(typeof(Protocol.Order)), orderUrl, HttpMethod.Post, "");
         }
 
         public async Task<AcmeResponse<Protocol.OrderList>> OrderListGetAsync(string ordersUrl)
         {
+            Logger.Info("Getting an ACME order list. Params:{@params}", ordersUrl);
+
             return await Request(GetType(typeof(Protocol.OrderList)), ordersUrl, HttpMethod.Post, "");
         }
 
@@ -416,6 +439,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/rfc8555#section-7.4.2"/>
         public async Task<AcmeResponse<X509Certificate2Collection>> OrderCertificateGetAsync(string certificateUrl)
         {
+            Logger.Info("Getting an ACME certificate list. Params:{@params}", certificateUrl);
+
             var response = await Request(certificateUrl, HttpMethod.Post, "");
             var chain = new X509Certificate2Collection();
             var rawData = await response.Content.ReadAsByteArrayAsync();
@@ -453,6 +478,12 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.4"/>
         public async Task<AcmeResponse<Protocol.Order>> OrderFinalizeAsync(string orderUrl, Protocol.Messages.FinalizeOrder finalizeOrder)
         {
+            Logger.Info("Finalize an ACME order. Params:{@params}", new
+            {
+                Url = orderUrl,
+                Params = finalizeOrder,
+            });
+
             return await Request(
                 GetType(typeof(Protocol.Order)),
                 orderUrl,
@@ -468,6 +499,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.4"/>
         public async Task<AcmeResponse<Protocol.Authorization>> AuthorizationCreateAsync(string authorizationUrl)
         {
+            Logger.Info("Creating an ACME authorization. Params:{@params}", authorizationUrl);
+
             return await Request(GetType(typeof(Protocol.Authorization)), authorizationUrl, HttpMethod.Post, "");
         }
 
@@ -477,6 +510,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5.2"/>
         public async Task<AcmeResponse<Protocol.Authorization>> AuthorizationDeactivateAsync(string authorizationUrl)
         {
+            Logger.Info("Deactivating an ACME authorization. Params:{@params}", authorizationUrl);
+
             return await Request(
                 GetType(typeof(Protocol.Authorization)),
                 authorizationUrl,
@@ -494,6 +529,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5.1"/>
         public async Task<AcmeResponse<Protocol.Challenge>> ChallengeValidateAsync(string challengeUrl)
         {
+            Logger.Info("Validating an ACME challenge. Params:{@params}", challengeUrl);
+
             return await Request(GetType(typeof(Protocol.Challenge)), challengeUrl, HttpMethod.Post, new { });
         }
 
@@ -503,6 +540,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.5.1"/>
         public async Task<AcmeResponse<Protocol.Challenge>> ChallengeGetAsync(string challengeUrl)
         {
+            Logger.Info("Getting an ACME challenge. Params:{@params}", challengeUrl);
+
             return await Request(GetType(typeof(Protocol.Challenge)), challengeUrl, HttpMethod.Post, "");
         }
 
@@ -512,6 +551,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-18#section-7.6"/>
         public async Task CertificateRevokeAsync(Protocol.Messages.RevokeCertificate revokeCertificate)
         {
+            Logger.Info("Revoking an ACME certificate. Params:{@params}", revokeCertificate);
+
             await Request(
                 Directory.RevokeCertificate,
                 HttpMethod.Post,
