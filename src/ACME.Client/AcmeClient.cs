@@ -183,9 +183,11 @@ namespace PeculiarVentures.ACME.Client
                 ReplayNonce = replayNonceValues?.FirstOrDefault(),
                 Location = locationValues?.FirstOrDefault(),
                 Links = linksValues != null ? new LinkHeaderCollection(linksValues.ToArray()) : null,
-                Content = new MediaTypeContent(
-                    response.Content.Headers.ContentType.MediaType,
-                    await response.Content.ReadAsByteArrayAsync()),
+                Content = response.Content == null
+                    ? new MediaTypeContent("", new byte[0])
+                    : new MediaTypeContent(
+                        response.Content.Headers.ContentType?.MediaType ?? "",
+                        await response.Content.ReadAsByteArrayAsync()),
             };
 
             Logger.Debug("Response {@response}", acmeResponse);
