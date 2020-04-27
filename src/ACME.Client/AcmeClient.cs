@@ -132,7 +132,8 @@ namespace PeculiarVentures.ACME.Client
 
             Logger.Debug("Request {method} {path} {token}", method, url, content);
 
-            var response = await _http.SendAsync(request);
+
+            var response = _http.SendAsync(request).Result;
 
             try
             {
@@ -253,7 +254,7 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Getting Directory object");
 
-            var response = await Request(GetType(typeof(Protocol.Directory)), "directory");
+            var response = await Request(GetType(typeof(Protocol.Directory)), "");
 
             Directory = (Protocol.Directory)response.Content;
 
@@ -301,7 +302,8 @@ namespace PeculiarVentures.ACME.Client
         /// <see cref="https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.3.5"/>
         public async Task<AcmeResponse<Protocol.Account>> AccountCreateAsync(Protocol.Messages.NewAccount account, string kid, string keyMac)
         {
-            Logger.Info("Creating a new ACME account with external account binding. Params:{@params}", new {
+            Logger.Info("Creating a new ACME account with external account binding. Params:{@params}", new
+            {
                 Account = account,
                 KeyId = kid,
                 KeyMac = keyMac,

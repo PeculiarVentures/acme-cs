@@ -5,7 +5,7 @@
 
     <IsPackable>false</IsPackable>
     <RootNamespace>PeculiarVentures.ACME</RootNamespace>
-    <ReleaseVersion>0.1.9</ReleaseVersion>
+    <ReleaseVersion>0.1.10</ReleaseVersion>
   </PropertyGroup>
 
   <ItemGroup>

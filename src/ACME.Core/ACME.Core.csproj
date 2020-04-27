@@ -6,8 +6,8 @@
   <Version>$version$</Version>
   <AssemblyVersion>1.0.0.0</AssemblyVersion>
   <FileVersion>1.0.0.*</FileVersion>
-  <ReleaseVersion>0.1.9</ReleaseVersion>
-  <PackageVersion>0.1.9</PackageVersion>
+  <PackageVersion>0.1.10</PackageVersion>
+  <ReleaseVersion>0.1.10</ReleaseVersion>
 </PropertyGroup>
 
 <PropertyGroup>
