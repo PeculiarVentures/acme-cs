@@ -80,7 +80,7 @@ namespace PeculiarVentures.ACME.Server.AspNet
             return CreateHttpResponseMessage(response);
         }
 
-        private AcmeRequest GetAcmeRequest()
+        protected AcmeRequest GetAcmeRequest()
         {
             return new AcmeRequest
             {
