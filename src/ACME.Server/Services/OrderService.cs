@@ -126,12 +126,12 @@ namespace PeculiarVentures.ACME.Server.Services
             order.Expires = listDate.Min(o => o);
         }
 
-        protected virtual object OnEnrollCertificateBefore(IOrder order, FinalizeOrder @params)
+        protected virtual CertificateEnrollParams OnEnrollCertificateBefore(CertificateEnrollParams certificateEnrollParams)
         {
-            return null;
+            return certificateEnrollParams;
         }
 
-        protected virtual void OnEnrollCertificateTask(IOrder order, FinalizeOrder @params, object result) { }
+        protected virtual void OnEnrollCertificateTask(CertificateEnrollParams certificateEnrollParams) { }
 
         protected virtual IOrder OnGetActualCheckBefore(NewOrder @params, int accountId)
         {
@@ -150,60 +150,83 @@ namespace PeculiarVentures.ACME.Server.Services
 
             var order = GetById(accountId, orderId);
 
+            // todo проверка на ready
+            if (order.Status != OrderStatus.Ready)
+            {
+                throw new AcmeException(ErrorType.OrderNotReady);
+            }
+
+            var certificateEnrollParams = new CertificateEnrollParams()
+            {
+                Order = order,
+                Params = @params,
+            };
+
+            try
+            {
+                OnEnrollCertificateBefore(certificateEnrollParams);
+            }
+            catch (Exception ex)
+            {
+                // return invalid order
+                CreateOrderError(ex, certificateEnrollParams.Order);
+                return certificateEnrollParams.Order;
+            }
+
             order.Status = OrderStatus.Processing;
             OrderRepository.Update(order);
-
             Logger.Info("Order {id} status updated to {status}", order.Id, order.Status);
 
-            var result = OnEnrollCertificateBefore(order, @params);
+            // check cancel
+            if (!certificateEnrollParams.Cancel)
+            {
 
-            Task
-                .Run(async () =>
-                {
-                    var requestRaw = Base64Url.Decode(@params.Csr);
-                    var request = new Pkcs10CertificateRequest(requestRaw);
-
-                    var certificate = await CertificateEnrollmentService.Enroll(order, request);
-                    order.Certificate = OrderRepository.CreateCertificate(certificate);
-                    OrderRepository.Update(order);
-
-                    OnEnrollCertificateTask(order, @params, result);
-
-                })
-                .ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
+                Task
+                    .Run(async () =>
                     {
-                        // TODO Optimize Error assignment
-                        Error err = t.Exception.InnerException;
-                        order.Error = OrderRepository.CreateError();
-                        order.Error.Detail = err.Detail;
-                        order.Error.Type = err.Type;
-                        order.Status = OrderStatus.Invalid;
+                        var requestRaw = Base64Url.Decode(@params.Csr);
+                        var request = new Pkcs10CertificateRequest(requestRaw);
+
+                        var certificate = await CertificateEnrollmentService.Enroll(order, request); // todo ? using certEnrollParams
+                        order.Certificate = OrderRepository.CreateCertificate(certificate);
                         OrderRepository.Update(order);
-                    }
-                    if (t.IsCompleted)
+
+                        OnEnrollCertificateTask(certificateEnrollParams);
+
+                    })
+                    .ContinueWith(t =>
                     {
-                        if (order.Status == OrderStatus.Processing)
+                        if (t.IsFaulted)
                         {
-                            order.Status = OrderStatus.Valid;
-                            OrderRepository.Update(order);
-
-                            Logger.Info("Certificate {thumbprint} for Order {id} issued successfully", order.Certificate.Thumbprint, order.Id);
+                            // TODO Optimize Error assignment
+                            CreateOrderError(t.Exception.InnerException, order);
                         }
-                    }
+                        if (t.IsCompleted)
+                        {
+                            if (order.Status == OrderStatus.Processing)
+                            {
+                                order.Status = OrderStatus.Valid;
+                                OrderRepository.Update(order);
 
-                    Logger.Info("Order {id} status updated to {status}", order.Id, order.Status);
-                });
+                                Logger.Info("Certificate {thumbprint} for Order {id} issued successfully", order.Certificate.Thumbprint, order.Id);
+                            }
+                        }
+
+                        Logger.Info("Order {id} status updated to {status}", order.Id, order.Status);
+                    });
+            }
 
             return order;
         }
 
-        private AsymmetricAlgorithm DecryptArchivedKey(string archivedKey)
+        private void CreateOrderError(Exception ex, IOrder order)
         {
-            var json = Base64Url.Decode(archivedKey);
-            var jwk = JsonConvert.DeserializeObject<JsonWebKey>(Encoding.UTF8.GetString(json));
-            return jwk.GetAsymmetricAlgorithm();
+            Error err = ex;
+            order.Error = OrderRepository.CreateError();
+            order.Error.Detail = err.Detail;
+            order.Error.Type = err.Type;
+            order.Status = OrderStatus.Invalid;
+            OrderRepository.Update(order);
         }
 
         public IOrder GetById(int accountId, int id)

@@ -149,6 +149,7 @@ namespace PeculiarVentures.ACME.Client
                     var error = JsonConvert.DeserializeObject<Protocol.Error>(errorJson);
 
                     message = $"{error.Type}: {error.Detail}";
+                    Logger.Debug("ACME Error {@error}", error);
                 }
                 catch
                 {
