@@ -20,7 +20,7 @@ namespace PeculiarVentures.ACME.Client
     {
         private readonly HttpClient _http;
 
-        protected ILogger Logger { get; } = LogManager.GetLogger("ACEM.Client");
+        protected ILogger Logger { get; } = LogManager.GetLogger("ACME.Client");
 
         public AsymmetricAlgorithm Key { get; private set; }
 
