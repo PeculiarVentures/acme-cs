@@ -129,6 +129,14 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             return CreateActionResult(response);
         }
 
+        [Route("key-change")]
+        [HttpPost]
+        public ActionResult ChangeKey([FromBody]JsonWebSignature token)
+        {
+            var response = Controller.ChangeKey(GetAcmeRequest(token));
+            return CreateActionResult(response);
+        }
+
         [Route("new-order")]
         [HttpPost]
         public ActionResult NewOrder([FromBody]JsonWebSignature token)
