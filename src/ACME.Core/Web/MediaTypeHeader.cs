@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Headers;
 
-namespace PeculiarVentures.ACME.Protocol
+namespace PeculiarVentures.ACME.Web
 {
     /// <summary>
     /// Content-Type headers.

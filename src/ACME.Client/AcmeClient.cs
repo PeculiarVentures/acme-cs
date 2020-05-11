@@ -127,7 +127,7 @@ namespace PeculiarVentures.ACME.Client
             if (!string.IsNullOrEmpty(content))
             {
                 request.Content = new StringContent(content);
-                request.Content.Headers.ContentType = Protocol.MediaTypeHeader.JsonContentTypeHeaderValue;
+                request.Content.Headers.ContentType = MediaTypeHeader.JsonContentTypeHeaderValue;
             }
 
             Logger.Debug("Request {method} {path} {token}", method, url, content);
