@@ -88,7 +88,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
                     if (request.Url == null)
                     {
-                        throw new UnauthorizedException("The JWS header MUST have 'url' field");
+                        throw new MalformedException("The JWS header MUST have 'url' field");
                     }
 
                     if (UseJwk)

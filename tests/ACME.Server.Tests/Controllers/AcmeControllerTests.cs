@@ -103,8 +103,93 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
         #region POST request security validation
 
+        [Fact(DisplayName = "POST: url does not present")]
+        public void POST_Url_Empty()
+        {
+            /// The "url" header parameter MUST be carried
+            /// in the protected header of the JWS.
+
+            AcmeResponse response = null;
+            using var provider = Application.CreateProvider();
+            IAcmeController controller = (IAcmeController)provider.GetService(typeof(IAcmeController));
+
+            // Get nonce
+            response = controller.GetNonce(new AcmeRequest
+            {
+                Path = $"{Application.BaseAddress}new-nonce",
+                Method = "HEAD",
+            });
+
+            var accountKey = RSA.Create(2048);
+            var token = new JsonWebSignature();
+            token.SetProtected(new JsonWebSignatureProtected
+            {
+                Nonce = response.ReplayNonce,
+                Algorithm = AlgorithmsEnum.RS256,
+                Key = new JsonWebKey(accountKey),
+            });
+            token.Sign(accountKey);
+
+            response = controller.CreateAccount(new AcmeRequest
+            {
+                Path = $"{Application.BaseAddress}new-acct",
+                Method = "POST",
+                Token = token,
+            });
+
+            Assert.Equal(400, response.StatusCode);
+
+            var content = response.GetContent<Protocol.Error>();
+
+            Assert.Equal(Protocol.ErrorType.Malformed, content.Type);
+            Assert.NotNull(content.Detail);
+        }
+
+        [Fact(DisplayName = "POST: url does not match to target URL")]
+        public void POST_Url_WrongTargetUrl()
+        {
+            /// The value of the "url" header
+            /// parameter MUST be a string representing the target URL
+
+            AcmeResponse response = null;
+            using var provider = Application.CreateProvider();
+            IAcmeController controller = (IAcmeController)provider.GetService(typeof(IAcmeController));
+
+            // Get nonce
+            response = controller.GetNonce(new AcmeRequest
+            {
+                Path = $"{Application.BaseAddress}new-nonce",
+                Method = "HEAD",
+            });
+
+            var accountKey = RSA.Create(2048);
+            var token = new JsonWebSignature();
+            token.SetProtected(new JsonWebSignatureProtected
+            {
+                Url = "https://wrong.com/acme/new-account",
+                Nonce = response.ReplayNonce,
+                Algorithm = AlgorithmsEnum.RS256,
+                Key = new JsonWebKey(accountKey),
+            });
+            token.Sign(accountKey);
+
+            response = controller.CreateAccount(new AcmeRequest
+            {
+                Path = $"{Application.BaseAddress}new-acct",
+                Method = "POST",
+                Token = token,
+            });
+
+            Assert.Equal(400, response.StatusCode);
+
+            var content = response.GetContent<Protocol.Error>();
+
+            Assert.Equal(Protocol.ErrorType.Malformed, content.Type);
+            Assert.NotNull(content.Detail);
+        }
+
         [Fact(DisplayName = "POST: empty nonce")]
-        public void POSt_Nonce_Empty()
+        public void POST_Nonce_Empty()
         {
             AcmeResponse response = null;
             using var provider = Application.CreateProvider();
@@ -136,7 +221,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         }
 
         [Fact(DisplayName = "POST: wrong encoding")]
-        public void POSt_Nonce_WrongEncoding()
+        public void POST_Nonce_WrongEncoding()
         {
             AcmeResponse response = null;
             using var provider = Application.CreateProvider();
