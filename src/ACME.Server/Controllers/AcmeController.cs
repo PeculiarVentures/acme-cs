@@ -136,7 +136,9 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
                     #region Check Nonce
 
-                    var nonce = request.Token.GetProtected().Nonce ?? throw new BadNonceException();
+                    // The "nonce" header parameter MUST be carried in the protected header of the JWS.
+                    var nonce = request.Token.GetProtected().Nonce
+                        ?? throw new MalformedException("The 'nonce' header parameter doesn't present in the protected header of the JWS");
                     NonceService.Validate(nonce);
 
                     #endregion
