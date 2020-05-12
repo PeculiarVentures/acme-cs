@@ -9,7 +9,7 @@ namespace PeculiarVentures.ACME
         {
         }
 
-        public AccountDoesNotExistException(string message) : base(ErrorType.AccountDoesNotExist, message)
+        public AccountDoesNotExistException(string message) : base(ErrorType.AccountDoesNotExist, message, System.Net.HttpStatusCode.BadRequest)
         {
         }
     }
