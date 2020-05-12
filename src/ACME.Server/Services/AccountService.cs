@@ -1,6 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.Options;
-using NLog;
+using PeculiarVentures.ACME.Exceptions;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Protocol.Messages;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
@@ -93,6 +93,14 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 throw new ArgumentNullException(nameof(@params));
             }
+            if (@params.Contacts != null && !ValidateContacts(@params.Contacts))
+            {
+                throw new UnsupportedContactException();
+            }
+            if (!@params.TermsOfServiceAgreed.HasValue || !@params.TermsOfServiceAgreed.Value)
+            {
+                throw new MalformedException("Must agree to terms of service");
+            }
             #endregion
 
             // Creates account
@@ -124,6 +132,52 @@ namespace PeculiarVentures.ACME.Server.Services
             Logger.Info("Account {id} created", account.Id);
 
             return account;
+        }
+
+        private bool ValidateContacts(string[] contacts)
+        {
+            #region Check arguments
+            if (contacts is null)
+            {
+                throw new ArgumentNullException(nameof(contacts));
+            }
+            #endregion
+
+            foreach (var contact in contacts)
+            {
+                try
+                {
+                    if (!OnValidateContact(contact))
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        protected bool OnValidateContact(string contact)
+        {
+            return IsMailto(contact);
+        }
+
+        protected bool IsMailto(string contact)
+        {
+            try
+            {
+                var url = new Uri(contact);
+                return url.Scheme == Uri.UriSchemeMailto;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+                return false;
+            }
         }
 
         /// <summary>

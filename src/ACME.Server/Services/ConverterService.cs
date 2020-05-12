@@ -57,7 +57,7 @@ namespace PeculiarVentures.ACME.Server.Services
         protected virtual Account OnToAccountConvert(Account account, IAccount data)
         {
             account.Id = data.Id;
-            account.Contacts = data.Contacts.ToArray();
+            account.Contacts = data.Contacts?.ToArray();
             account.Status = data.Status;
             account.TermsOfServiceAgreed = data.TermsOfServiceAgreed;
             account.Key = data.Key;
