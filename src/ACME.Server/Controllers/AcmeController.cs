@@ -314,7 +314,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
                 // Validate the POST request belongs to a currently active account, as described in Section 6.
                 var account = GetAccount(reqProtected.KeyID);
-                var jws = new JsonWebSignature();
+                var jws = request.Token;
                 if (!jws.Verify(account.Key.GetPublicKey()))
                 {
                     throw new MalformedException();
@@ -332,13 +332,13 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 }
 
                 // Check that the inner JWS verifies using the key in its "jwk" field.
-                if (!jws.Verify(jwk.GetPublicKey()))
+                if (!innerJWS.Verify(jwk.GetPublicKey()))
                 {
                     throw new MalformedException("The inner JWT not verified");
                 }
 
                 // Check that the payload of the inner JWS is a well-formed keyChange object (as described above).
-                if (innerJWS.TryGetPayload(out ChangeKey param))
+                if (!innerJWS.TryGetPayload(out ChangeKey param))
                 {
                     throw new MalformedException("The payload of the inner JWS is not a well-formed keyChange object");
                 }

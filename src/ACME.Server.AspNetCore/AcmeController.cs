@@ -90,6 +90,13 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
             }
             #endregion
 
+            #region Add Content-Type for Error
+            if (response.Content is Error)
+            {
+                Response.Headers.Add("Content-Type", new string[] { "application/problem+json" });
+            }
+            #endregion
+
             return result;
         }
 

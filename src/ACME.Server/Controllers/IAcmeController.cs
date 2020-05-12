@@ -18,5 +18,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
         AcmeResponse FinalizeOrder(AcmeRequest request, int orderId);
         AcmeResponse GetCertificate(AcmeRequest acmeRequest, string id);
         AcmeResponse RevokeCertificate(AcmeRequest request);
+        AcmeResponse ChangeKey(AcmeRequest acmeRequest);
     }
 }

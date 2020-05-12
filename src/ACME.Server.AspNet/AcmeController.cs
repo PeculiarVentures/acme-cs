@@ -70,6 +70,11 @@ namespace PeculiarVentures.ACME.Server.AspNet
                 result.Headers.Add("Replay-Nonce", response.ReplayNonce);
             }
 
+            if (response.Content is Error)
+            {
+                result.Headers.Add("Content-Type", new string[] { "application/problem+json" });
+            }
+
             return result;
         }
 
@@ -141,6 +146,12 @@ namespace PeculiarVentures.ACME.Server.AspNet
         public virtual HttpResponseMessage UpdateAccount(JsonWebSignature token, int id)
         {
             var response = Controller.PostAccount(GetAcmeRequest(token));
+            return CreateHttpResponseMessage(response);
+        }
+
+        public virtual HttpResponseMessage ChangeKey(JsonWebSignature token)
+        {
+            var response = Controller.ChangeKey(GetAcmeRequest(token));
             return CreateHttpResponseMessage(response);
         }
 
