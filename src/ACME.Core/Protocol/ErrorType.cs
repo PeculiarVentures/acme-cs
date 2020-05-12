@@ -134,7 +134,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// A contact URL for an account used an
         /// unsupported protocol scheme
         /// </summary>
-        [EnumMember(Value = "urn:ietf:params:acme:error:UnsupportedContact")]
+        [EnumMember(Value = "urn:ietf:params:acme:error:unsupportedContact")]
         UnsupportedContact,
         /// <summary>
         /// An identifier is of an unsupported type
