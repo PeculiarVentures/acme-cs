@@ -77,7 +77,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             // resource, returning an empty body(while still providing a Replay -
             // Nonce header) with a status code of 204(No Content)
             Assert.Equal(204, response.StatusCode);
-            Assert.NotNull(response.ReplayNonce);
+            Assert.NotNull(response.Headers.ReplayNonce);
         }
 
         [Fact(DisplayName = "New nonce: HEAD")]
@@ -96,7 +96,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             // Nonce header field containing a fresh nonce and SHOULD have status
             // code 200(OK)
             Assert.Equal(200, response.StatusCode);
-            Assert.NotNull(response.ReplayNonce);
+            Assert.NotNull(response.Headers.ReplayNonce);
         }
 
         #endregion
@@ -124,7 +124,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             var token = new JsonWebSignature();
             token.SetProtected(new JsonWebSignatureProtected
             {
-                Nonce = response.ReplayNonce,
+                Nonce = response.Headers.ReplayNonce,
                 Algorithm = AlgorithmsEnum.RS256,
                 Key = new JsonWebKey(accountKey),
             });
@@ -167,7 +167,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             token.SetProtected(new JsonWebSignatureProtected
             {
                 Url = "https://wrong.com/acme/new-account",
-                Nonce = response.ReplayNonce,
+                Nonce = response.Headers.ReplayNonce,
                 Algorithm = AlgorithmsEnum.RS256,
                 Key = new JsonWebKey(accountKey),
             });
@@ -280,7 +280,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 Url = $"{Application.BaseAddress}new-acct",
                 Algorithm = AlgorithmsEnum.RS256,
                 Key = new JsonWebKey(accountKey),
-                Nonce = response.ReplayNonce,
+                Nonce = response.Headers.ReplayNonce,
             });
             token.SetPayload(new NewAccount
             {
@@ -325,7 +325,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 Url = $"{Application.BaseAddress}new-acct",
                 Algorithm = AlgorithmsEnum.RS256,
                 Key = new JsonWebKey(accountKey),
-                Nonce = response.ReplayNonce,
+                Nonce = response.Headers.ReplayNonce,
             });
             token.SetPayload(new NewAccount
             {
@@ -372,7 +372,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 Url = $"{Application.BaseAddress}new-acct",
                 Algorithm = AlgorithmsEnum.RS256,
                 Key = new JsonWebKey(accountKey),
-                Nonce = response.ReplayNonce,
+                Nonce = response.Headers.ReplayNonce,
             });
             token.SetPayload(new NewAccount
             {

@@ -55,19 +55,19 @@ namespace PeculiarVentures.ACME.Server.AspNet
                 result = Request.CreateResponse(response.StatusCode);
             }
 
-            foreach (var link in response.Links)
+            foreach (var link in response.Headers.Link)
             {
                 result.Headers.Add("Link", link.ToString());
             }
 
-            if (response.Location != null)
+            if (response.Headers.Location != null)
             {
-                result.Headers.Location = new Uri(response.Location);
+                result.Headers.Location = new Uri(response.Headers.Location);
             }
 
-            if (response.ReplayNonce != null)
+            if (response.Headers.ReplayNonce != null)
             {
-                result.Headers.Add("Replay-Nonce", response.ReplayNonce);
+                result.Headers.Add("Replay-Nonce", response.Headers.ReplayNonce);
             }
 
             if (response.Content is Error)
@@ -87,11 +87,17 @@ namespace PeculiarVentures.ACME.Server.AspNet
 
         protected AcmeRequest GetAcmeRequest()
         {
+            var headers = new HeaderCollection();
+            foreach (var header in Request.Headers)
+            {
+                headers.Add(header.Key, string.Join(", ", header.Value));
+            }
             return new AcmeRequest
             {
                 Method = Request.Method.Method,
                 Query = GetQuery(),
                 Path = Request.RequestUri.ToString(),
+                Headers = headers,
             };
         }
 
@@ -134,10 +140,10 @@ namespace PeculiarVentures.ACME.Server.AspNet
         {
             var response = Controller.CreateAccount(GetAcmeRequest(token));
 
-            if (response.Location != null)
+            if (response.Headers.Location != null)
             {
                 // Complete Location
-                response.Location = new Uri(BaseUri, $"acct/{response.Location}").ToString();
+                response.Headers.Location = new Uri(BaseUri, $"acct/{response.Headers.Location}").ToString();
             }
 
             return CreateHttpResponseMessage(response);

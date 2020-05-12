@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using PeculiarVentures.ACME.Web.Http;
 
 namespace PeculiarVentures.ACME.Web
@@ -6,9 +7,7 @@ namespace PeculiarVentures.ACME.Web
     public abstract class BaseAcmeResponse
     {
         public int StatusCode { get; set; } = 200;
-        public string ReplayNonce { get; set; }
-        public string Location { get; set; }
-        public LinkHeaderCollection Links { get; set; } = new LinkHeaderCollection();
+        public HeaderCollection Headers { get; set; } = new HeaderCollection();
     }
 
     public class AcmeResponse : BaseAcmeResponse
@@ -39,9 +38,7 @@ namespace PeculiarVentures.ACME.Web
             return new AcmeResponse<T>
             {
                 StatusCode = response.StatusCode,
-                ReplayNonce = response.ReplayNonce,
-                Location = response.Location,
-                Links = response.Links,
+                Headers = response.Headers,
                 Content = (T)response.Content,
             };
         }

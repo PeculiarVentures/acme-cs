@@ -36,11 +36,18 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
 
         private AcmeRequest GetAcmeRequest()
         {
+            var headers = new HeaderCollection();
+            Request.Headers.ForEach(o =>
+            {
+                headers.Set(o.Key, string.Join(", ", o.Value));
+            });
+
             return new AcmeRequest()
             {
                 Method = Request.Method,
                 Query = GetQuery(),
                 Path = UriHelper.GetDisplayUrl(Request),
+                Headers = headers, 
             };
         }
 
@@ -69,24 +76,24 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
 
             #region Add Link header
             var directoryLink = new Uri(BaseUri, "directory");
-            response.Links.Add(
+            response.Headers.Link.Add(
                 new LinkHeader(directoryLink.ToString(), new LinkHeaderItem("rel", "index", true)));
 
-            var links = response.Links.Select(o => o.ToString()).ToArray();
+            var links = response.Headers.Link.Select(o => o.ToString()).ToArray();
             Response.Headers.Add("Link", links);
             #endregion
 
             #region Add Loacation header
-            if (response.Location != null)
+            if (response.Headers.Location != null)
             {
-                Response.Headers.Add("Location", response.Location);
+                Response.Headers.Add("Location", response.Headers.Location);
             }
             #endregion
 
             #region Add Replay-Nonce header
-            if (response.ReplayNonce != null)
+            if (response.Headers.ReplayNonce != null)
             {
-                Response.Headers.Add("Replay-Nonce", response.ReplayNonce);
+                Response.Headers.Add("Replay-Nonce", response.Headers.ReplayNonce);
             }
             #endregion
 

@@ -178,12 +178,16 @@ namespace PeculiarVentures.ACME.Client
                 Nonce = replayNonceValues.FirstOrDefault();
             }
 
+            var headers = new HeaderCollection();
+            foreach (var header in response.Headers)
+            {
+                headers.Add(header.Key, string.Join(", ", header.Value));
+            }
+
             var acmeResponse = new AcmeResponse
             {
                 StatusCode = (int)response.StatusCode,
-                ReplayNonce = replayNonceValues?.FirstOrDefault(),
-                Location = locationValues?.FirstOrDefault(),
-                Links = linksValues != null ? new LinkHeaderCollection(linksValues.ToArray()) : null,
+                Headers = headers,
                 Content = response.Content == null
                     ? new MediaTypeContent("", new byte[0])
                     : new MediaTypeContent(
@@ -273,7 +277,7 @@ namespace PeculiarVentures.ACME.Client
 
             var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount, HttpMethod.Post, account, true);
 
-            if (string.IsNullOrEmpty(response.Location))
+            if (string.IsNullOrEmpty(response.Headers.Location))
             {
                 var ex = new AcmeException(Protocol.ErrorType.IncorrectResponse, "Account creation response does not include Location header.");
 
@@ -282,7 +286,7 @@ namespace PeculiarVentures.ACME.Client
                 throw ex;
             }
 
-            Location = response.Location;
+            Location = response.Headers.Location;
 
             return response;
         }
@@ -333,7 +337,7 @@ namespace PeculiarVentures.ACME.Client
 
             var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount, HttpMethod.Post, account);
 
-            if (string.IsNullOrEmpty(response.Location))
+            if (string.IsNullOrEmpty(response.Headers.Location))
             {
                 var ex = new AcmeException(Protocol.ErrorType.IncorrectResponse, "Account updating response does not include Location header.");
 
@@ -342,7 +346,7 @@ namespace PeculiarVentures.ACME.Client
                 throw ex;
             }
 
-            Location = response.Location;
+            Location = response.Headers.Location;
 
             return response;
         }

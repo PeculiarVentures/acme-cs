@@ -46,11 +46,12 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
         public AcmeResponse CreateResponse()
         {
-            return new AcmeResponse
+            var resp = new AcmeResponse
             {
                 StatusCode = 200, // OK
-                ReplayNonce = NonceService.Create(),
             };
+            resp.Headers.ReplayNonce = NonceService.Create();
+            return resp;
         }
 
         /// <summary>
@@ -74,6 +75,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
                     // Parse JWT
                     var token = request.Token;
+                    var header = token.GetProtected();
                     try
                     {
                         if (token == null)
@@ -86,14 +88,14 @@ namespace PeculiarVentures.ACME.Server.Controllers
                         throw new AcmeException(ErrorType.Unauthorized, "Cannot parse JSON Web Token", System.Net.HttpStatusCode.Unauthorized, e);
                     }
 
-                    if (request.Url == null)
+                    if (header.Url == null)
                     {
                         throw new MalformedException("The JWS header MUST have 'url' field");
                     }
 
                     if (UseJwk)
                     {
-                        if (request.Key == null)
+                        if (header.Key == null)
                         {
                             throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'jwk' field", System.Net.HttpStatusCode.BadRequest);
                         }
@@ -102,7 +104,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                             throw new AcmeException(ErrorType.Unauthorized, "JWS signature is invalid", System.Net.HttpStatusCode.Unauthorized);
                         }
 
-                        account = AccountService.FindByPublicKey(request.Key);
+                        account = AccountService.FindByPublicKey(header.Key);
                         // If a server receives a POST or POST-as-GET from a deactivated account, it MUST return an error response with status
                         // code 401(Unauthorized) and type "urn:ietf:params:acme:error:unauthorized"
                         if (account != null && account.Status != AccountStatus.Valid)
@@ -112,12 +114,12 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     }
                     else
                     {
-                        if (request.KeyId == null)
+                        if (header.KeyID == null)
                         {
                             throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'kid' field", System.Net.HttpStatusCode.BadRequest);
                         }
 
-                        account = AccountService.GetById(GetIdFromLink(request.KeyId));
+                        account = AccountService.GetById(GetIdFromLink(header.KeyID));
 
                         if (!token.Verify(account.Key.GetPublicKey()))
                         {
@@ -180,7 +182,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
-                response.ReplayNonce = NonceService.Create();
+                response.Headers.ReplayNonce = NonceService.Create();
                 if (request.Method == null
                     || !request.Method.Equals("head", StringComparison.CurrentCultureIgnoreCase))
                 {
@@ -231,8 +233,9 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction(response =>
             {
+                var header = request.Token.GetProtected();
                 var @params = (NewAccount)request.GetContent(ConverterService.GetType<NewAccount>());
-                var account = AccountService.FindByPublicKey(request.Key);
+                var account = AccountService.FindByPublicKey(header.Key);
 
                 if (@params.OnlyReturnExisting == true)
                 {
@@ -248,7 +251,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     if (account == null)
                     {
                         // Create new account
-                        account = AccountService.Create(request.Key, @params);
+                        account = AccountService.Create(header.Key, @params);
                         response.Content = ConverterService.ToAccount(account);
                         response.StatusCode = 201; // Created
                     }
@@ -260,7 +263,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     }
                 }
 
-                response.Location = $"{Options.BaseAddress}/acct/{account.Id}";
+                response.Headers.Location = $"{Options.BaseAddress}acct/{account.Id}";
             }, request, true);
         }
 
@@ -268,9 +271,10 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
+                var header = request.Token.GetProtected();
                 var @params = (UpdateAccount)request.GetContent(ConverterService.GetType<UpdateAccount>());
 
-                var account = GetAccount(request.KeyId);
+                var account = GetAccount(header.KeyID);
                 AssertAccountStatus(account);
 
                 if (@params.Status != null)
@@ -293,7 +297,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     response.Content = account;
                 }
 
-                response.Location = $"{Options.BaseAddress}/acct/{account.Id}";
+                response.Headers.Location = $"{Options.BaseAddress}acct/{account.Id}";
             }, request);
         }
 
@@ -382,7 +386,8 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
-                var account = GetAccount(request.KeyId);
+                var header = request.Token.GetProtected();
+                var account = GetAccount(header.KeyID);
                 var @params = (NewOrder)request.GetContent(ConverterService.GetType<NewOrder>());
 
                 var order = OrderService.GetActual(account.Id, @params);
@@ -391,7 +396,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     order = OrderService.Create(account.Id, @params);
                     response.StatusCode = 201; // Created
                 }
-                response.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
+                response.Headers.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
                 response.Content = ConverterService.ToOrder(order);
             }, request);
         }
@@ -400,9 +405,10 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
-                var account = GetAccount(request.KeyId);
+                var header = request.Token.GetProtected();
+                var account = GetAccount(header.KeyID);
                 var order = OrderService.GetById(account.Id, orderId);
-                response.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
+                response.Headers.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
                 response.Content = ConverterService.ToOrder(order);
             }, request);
         }
@@ -411,7 +417,8 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
-                var account = GetAccount(request.KeyId);
+                var header = request.Token.GetProtected();
+                var account = GetAccount(header.KeyID);
                 var @params = request.Query;
                 var orderList = OrderService.GetList(account.Id, @params);
 
@@ -432,7 +439,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 }
 
                 // Add links
-                var link = $"{Options.BaseAddress}/orders";
+                var link = $"{Options.BaseAddress}orders";
                 int page = 0;
                 if (@params.ContainsKey("cursor"))
                 {
@@ -440,11 +447,11 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 }
                 if (page > 0)
                 {
-                    response.Links.Add(new Web.Http.LinkHeader($"{link}?cursor={page - 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "previous", true)));
+                    response.Headers.Link.Add(new Web.Http.LinkHeader($"{link}?cursor={page - 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "previous", true)));
                 }
                 if (orderList.NextPage)
                 {
-                    response.Links.Add(new Web.Http.LinkHeader($"{link}?cursor={page + 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "next", true)));
+                    response.Headers.Link.Add(new Web.Http.LinkHeader($"{link}?cursor={page + 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "next", true)));
                 }
 
                 response.Content = ConverterService.ToOrderList(orderList.Orders);
@@ -455,11 +462,12 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
-                var account = GetAccount(request.KeyId);
+                var header = request.Token.GetProtected();
+                var account = GetAccount(header.KeyID);
                 var @params = (FinalizeOrder)request.GetContent(ConverterService.GetType<FinalizeOrder>());
                 var order = OrderService.EnrollCertificate(account.Id, orderId, @params);
 
-                response.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
+                response.Headers.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
                 response.Content = ConverterService.ToOrder(order);
             }, request);
         }
@@ -470,7 +478,8 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
-                var account = GetAccount(request.KeyId);
+                var header = request.Token.GetProtected();
+                var account = GetAccount(header.KeyID);
 
                 var challenge = ChallengeService.GetById(challengeId);
                 _ = AuthorizationService.GetById(account.Id, challenge.AuthorizationId);
@@ -490,7 +499,8 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
-                var account = GetAccount(request.KeyId);
+                var header = request.Token.GetProtected();
+                var account = GetAccount(header.KeyID);
 
                 var authz = AuthorizationService.GetById(account.Id, authzId);
 
@@ -503,7 +513,8 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
-                var account = GetAccount(request.KeyId);
+                var header = request.Token.GetProtected();
+                var account = GetAccount(header.KeyID);
                 var certs = OrderService.GetCertificate(account.Id, thumbprint);
 
                 switch (Options.DownloadCertificateFormat)
@@ -535,15 +546,16 @@ namespace PeculiarVentures.ACME.Server.Controllers
         {
             return WrapAction((response) =>
             {
+                var header = request.Token.GetProtected();
                 var @params = (RevokeCertificate)request.GetContent(ConverterService.GetType<RevokeCertificate>());
-                if (request.KeyId != null)
+                if (header.KeyID != null)
                 {
-                    var account = GetAccount(request.KeyId);
+                    var account = GetAccount(header.KeyID);
                     OrderService.RevokeCertificate(account.Id, @params);
                 }
                 else
                 {
-                    OrderService.RevokeCertificate(request.Key, @params);
+                    OrderService.RevokeCertificate(header.Key, @params);
                 }
             }, request);
         }
