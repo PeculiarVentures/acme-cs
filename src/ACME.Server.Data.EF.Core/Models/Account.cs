@@ -40,7 +40,7 @@ namespace PeculiarVentures.ACME.Server.Data.EF.Core.Models
             }
         }
 
-        public bool TermsOfServiceAgreed { get; set; }
+        public bool? TermsOfServiceAgreed { get; set; }
 
         public int? ExternalAccountId { get; set; }
 

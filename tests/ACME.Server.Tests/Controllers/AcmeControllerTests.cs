@@ -259,7 +259,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
         #region Account management
 
-        [Fact(DisplayName = "Account: Create new account with wrong contact")]
+        [Fact(DisplayName = "Account: Create a new account with a wrong contact")]
         public void Account_New_Contact_Wrong()
         {
             AcmeResponse response = null;
@@ -295,12 +295,105 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 Method = "POST",
                 Token = token,
             });
-
             Assert.Equal(400, response.StatusCode);
 
             var content = response.GetContent<Protocol.Error>();
 
             Assert.Equal(Protocol.ErrorType.UnsupportedContact, content.Type);
+            Assert.NotNull(content.Detail);
+        }
+
+        [Fact(DisplayName = "Account: Create a new account with disabled TermsOfService")]
+        public void Account_New_TermsOfService_Disabled()
+        {
+            AcmeResponse response = null;
+            using var provider = Application.CreateProvider();
+            IAcmeController controller = (IAcmeController)provider.GetService(typeof(IAcmeController));
+
+            // Get nonce
+            response = controller.GetNonce(new AcmeRequest
+            {
+                Path = $"{Application.BaseAddress}new-nonce",
+                Method = "HEAD",
+            });
+
+            // Create token
+            var accountKey = RSA.Create(2048);
+            var token = new JsonWebSignature();
+            token.SetProtected(new JsonWebSignatureProtected
+            {
+                Url = $"{Application.BaseAddress}new-acct",
+                Algorithm = AlgorithmsEnum.RS256,
+                Key = new JsonWebKey(accountKey),
+                Nonce = response.ReplayNonce,
+            });
+            token.SetPayload(new NewAccount
+            {
+                Contacts = new string[] { "mailto:somecontact@mail.com" },
+            });
+            token.Sign(accountKey);
+
+            // Create account
+            response = controller.CreateAccount(new AcmeRequest
+            {
+                Path = $"{Application.BaseAddress}new-acct",
+                Method = "POST",
+                Token = token,
+            });
+
+            Assert.Equal(201, response.StatusCode);
+
+            var content = response.GetContent<Protocol.Account>();
+
+            Assert.Null(content.TermsOfServiceAgreed);
+        }
+
+        [Fact(DisplayName = "Account: Create a new account with enabled TermsOfService with TermsOfServiceAgreed:false")]
+        public void Account_New_TermsOfService_Enabled_TermsOfServiceAgreed_False()
+        {
+            AcmeResponse response = null;
+            using var provider = Application.CreateProvider(o => {
+                o.TermsOfService = "https://some.com/acme/terms.pdf";
+            });
+            IAcmeController controller = (IAcmeController)provider.GetService(typeof(IAcmeController));
+
+            // Get nonce
+            response = controller.GetNonce(new AcmeRequest
+            {
+                Path = $"{Application.BaseAddress}new-nonce",
+                Method = "HEAD",
+            });
+
+            // Create token
+            var accountKey = RSA.Create(2048);
+            var token = new JsonWebSignature();
+            token.SetProtected(new JsonWebSignatureProtected
+            {
+                Url = $"{Application.BaseAddress}new-acct",
+                Algorithm = AlgorithmsEnum.RS256,
+                Key = new JsonWebKey(accountKey),
+                Nonce = response.ReplayNonce,
+            });
+            token.SetPayload(new NewAccount
+            {
+                Contacts = new string[] { "mailto:somecontact@mail.com" },
+                TermsOfServiceAgreed = false,
+            });
+            token.Sign(accountKey);
+
+            // Create account
+            response = controller.CreateAccount(new AcmeRequest
+            {
+                Path = $"{Application.BaseAddress}new-acct",
+                Method = "POST",
+                Token = token,
+            });
+
+            Assert.Equal(400, response.StatusCode);
+
+            var content = response.GetContent<Protocol.Error>();
+
+            Assert.Equal(Protocol.ErrorType.Malformed, content.Type);
             Assert.NotNull(content.Detail);
         }
 

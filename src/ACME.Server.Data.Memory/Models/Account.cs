@@ -11,7 +11,7 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Models
     {
         public AccountStatus Status { get; set; }
         public JsonWebKey Key { get; set; }
-        public bool TermsOfServiceAgreed { get; set; }
+        public bool? TermsOfServiceAgreed { get; set; }
         public int? ExternalAccountId { get; set; }
         public ICollection<string> Contacts { get; set; } = new List<string>();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -21,7 +21,6 @@ namespace PeculiarVentures.ACME.Server.Data.Memory.Models
             var account = new Account
             {
                 Status = AccountStatus.Valid,
-                TermsOfServiceAgreed = true,
             };
 
             if (@params.Contacts != null)

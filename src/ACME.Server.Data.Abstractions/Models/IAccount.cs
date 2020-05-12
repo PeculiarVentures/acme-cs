@@ -11,7 +11,7 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
 
         JsonWebKey Key { get; set; }
 
-        bool TermsOfServiceAgreed { get; set; }
+        bool? TermsOfServiceAgreed { get; set; }
 
         int? ExternalAccountId { get; set; }
 

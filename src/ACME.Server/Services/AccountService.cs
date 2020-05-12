@@ -97,7 +97,16 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 throw new UnsupportedContactException();
             }
-            if (!@params.TermsOfServiceAgreed.HasValue || !@params.TermsOfServiceAgreed.Value)
+
+            /// If the server wishes to require the client to agree to terms under
+            /// which the ACME service is to be used, it MUST indicate the URL where
+            /// such terms can be accessed in the "termsOfService" subfield of the
+            /// "meta" field in the directory object, and the server MUST reject
+            /// newAccount requests that do not have the "termsOfServiceAgreed" field
+            /// set to "true". Clients SHOULD NOT automatically agree to terms by
+            /// default. Rather, they SHOULD require some user interaction for
+            /// agreement to terms.
+            if (Options.TermsOfService != null && (!@params.TermsOfServiceAgreed.HasValue || !@params.TermsOfServiceAgreed.Value))
             {
                 throw new MalformedException("Must agree to terms of service");
             }
@@ -190,7 +199,7 @@ namespace PeculiarVentures.ACME.Server.Services
         {
             account.Key = key;
             account.Contacts = @params.Contacts;
-            account.TermsOfServiceAgreed = @params.TermsOfServiceAgreed ?? false;
+            account.TermsOfServiceAgreed = @params.TermsOfServiceAgreed;
         }
 
         public IAccount Update(int accountId, string[] contacts)
