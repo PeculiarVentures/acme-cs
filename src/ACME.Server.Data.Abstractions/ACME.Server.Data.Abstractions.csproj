@@ -10,8 +10,8 @@
     <Owners>PeculiarVentures</Owners>
     <Title>PeculiarVentures.ACME.Server.Data.Abstraction</Title>
     <Description>ACME Data abstraction library</Description>
-    <ReleaseVersion>0.1.20</ReleaseVersion>
-    <PackageVersion>0.1.20</PackageVersion>
+    <ReleaseVersion>0.1.21</ReleaseVersion>
+    <PackageVersion>0.1.21</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
