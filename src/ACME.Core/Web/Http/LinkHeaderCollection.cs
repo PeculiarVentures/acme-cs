@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace PeculiarVentures.ACME.Web.Http
 {
-    public class LinkHeaderCollection : Collection<LinkHeader>
+    public class LinkHeaderCollection : ObservableCollection<LinkHeader>
     {
+
+        internal HeaderCollection Parent { get; set; }
 
         public LinkHeaderCollection()
         {
@@ -54,22 +54,9 @@ namespace PeculiarVentures.ACME.Web.Http
             }
         }
 
-        //public int Add(LinkHeader item)
-        //{
-        //    #region Check arguments
-        //    if (item is null)
-        //    {
-        //        throw new ArgumentNullException(nameof(item));
-        //    }
-        //    #endregion
-
-        //    return List.Add(item);
-        //}
-
-        //todo recursive
-        //IEnumerator<LinkHeader> IEnumerable<LinkHeader>.GetEnumerator()
-        //{
-        //    return List.Cast<LinkHeader>().GetEnumerator();
-        //}
+        public override string ToString()
+        {
+            return string.Join(", ", this.ToArray().Select(o => o.ToString()).ToArray());
+        }
     }
 }

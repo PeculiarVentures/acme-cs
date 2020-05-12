@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Net;
 
 namespace PeculiarVentures.ACME.Web
 {
@@ -9,6 +9,8 @@ namespace PeculiarVentures.ACME.Web
         {
         }
 
+        public HeaderCollection Headers { get; set; } = new HeaderCollection();
+
         public AcmeRequest(JsonWebSignature token)
         {
             Token = token ?? throw new ArgumentNullException(nameof(token));
@@ -16,52 +18,8 @@ namespace PeculiarVentures.ACME.Web
 
         public JsonWebSignature Token { get; set; }
 
-        public JsonWebKey Key
-        {
-            get
-            {
-                if (Token != null)
-                {
-                    var header = Token.GetProtected();
-                    return header.Key;
-                }
-                return null;
-            }
-        }
-
-        public string KeyId
-        {
-            get
-            {
-                if (Token != null)
-                {
-                    var header = Token.GetProtected();
-                    return header.KeyID;
-                }
-                return null;
-            }
-        }
-
         public Query Query { get; set; } = new Query();
-        public object Content { get; set; }
         public string Method { get; set; }
-
-        /// <summary>
-        /// Returns Url header from Token
-        /// </summary>
-        public string Url
-        {
-            get
-            {
-                if (Token != null)
-                {
-                    var header = Token.GetProtected();
-                    return header.Url;
-                }
-                return null;
-            }
-        }
-
         public string Path { get; set; }
 
         /// <summary>
