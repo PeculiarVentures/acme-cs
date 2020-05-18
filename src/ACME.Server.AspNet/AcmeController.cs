@@ -1,14 +1,12 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Newtonsoft.Json;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Server.Controllers;
 using PeculiarVentures.ACME.Web;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace PeculiarVentures.ACME.Server.AspNet
@@ -27,8 +25,6 @@ namespace PeculiarVentures.ACME.Server.AspNet
         public virtual HttpResponseMessage GetDirectory()
         {
             var response = Controller.GetDirectory(GetAcmeRequest());
-            var directory = response.GetContent<Directory>();
-
             return CreateHttpResponseMessage(response);
         }
 
@@ -47,7 +43,14 @@ namespace PeculiarVentures.ACME.Server.AspNet
                 }
                 else
                 {
-                    result = Request.CreateResponse((HttpStatusCode)response.StatusCode, response.Content);
+                    result = Request.CreateResponse((HttpStatusCode)response.StatusCode);
+
+                    result.Content = new StringContent(
+                        JsonConvert.SerializeObject(response.Content),
+                        Encoding.UTF8,
+                        response.Content is Error
+                            ? "application/problem+json"
+                            : "application/json");
                 }
             }
             else
@@ -55,25 +58,12 @@ namespace PeculiarVentures.ACME.Server.AspNet
                 result = Request.CreateResponse(response.StatusCode);
             }
 
-            foreach (var link in response.Headers.Link)
+            #region Add headers
+            foreach (var header in response.Headers.AllKeys)
             {
-                result.Headers.Add("Link", link.ToString());
+                result.Headers.Add(header, response.Headers.Get(header));
             }
-
-            if (response.Headers.Location != null)
-            {
-                result.Headers.Location = new Uri(response.Headers.Location);
-            }
-
-            if (response.Headers.ReplayNonce != null)
-            {
-                result.Headers.Add("Replay-Nonce", response.Headers.ReplayNonce);
-            }
-
-            if (response.Content is Error)
-            {
-                result.Headers.Add("Content-Type", new string[] { "application/problem+json" });
-            }
+            #endregion
 
             return result;
         }

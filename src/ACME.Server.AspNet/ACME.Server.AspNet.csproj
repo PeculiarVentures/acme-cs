@@ -20,8 +20,8 @@
     <Title>PeculiarVentures.ACME.Server.AspNet</Title>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PackageVersion>0.1.21</PackageVersion>
-    <ReleaseVersion>0.1.21</ReleaseVersion>
+    <PackageVersion>0.1.24</PackageVersion>
+    <ReleaseVersion>0.1.24</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

@@ -209,6 +209,10 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 throw new ArgumentNullException(nameof(contacts));
             }
+            if (contacts != null && !ValidateContacts(contacts))
+            {
+                throw new UnsupportedContactException();
+            }
             #endregion
 
             // Get account
@@ -275,7 +279,10 @@ namespace PeculiarVentures.ACME.Server.Services
             // Check key
             if (AccountRepository.FindByPublicKey(key) != null)
             {
-                throw new MalformedException(nameof(key));
+                throw new AcmeException(
+                    ErrorType.Malformed,
+                    "Key conflict",
+                    System.Net.HttpStatusCode.Conflict);
             }
 
             // Change key

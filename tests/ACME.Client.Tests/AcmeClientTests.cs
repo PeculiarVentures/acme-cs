@@ -199,7 +199,7 @@ namespace PeculiarVentures.ACME.Client
             Assert.Equal(3, authorization.Content.Challenges.Count);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Get challenge")]
         public async void ChallengeGet()
         {
             var client = await GetClient();

@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>PeculiarVentures.ACME.Server.Data.EF.Core</RootNamespace>
     <AssemblyName>PeculiarVentures.ACME.Server.Data.EF.Core</AssemblyName>
-    <ReleaseVersion>0.1.21</ReleaseVersion>
+    <ReleaseVersion>0.1.24</ReleaseVersion>
   </PropertyGroup>
 
   <ItemGroup>

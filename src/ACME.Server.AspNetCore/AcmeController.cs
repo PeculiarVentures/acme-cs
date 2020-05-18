@@ -74,26 +74,10 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
                     StatusCode = response.StatusCode,
                 };
 
-            #region Add Link header
-            var directoryLink = new Uri(BaseUri, "directory");
-            response.Headers.Link.Add(
-                new LinkHeader(directoryLink.ToString(), new LinkHeaderItem("rel", "index", true)));
-
-            var links = response.Headers.Link.Select(o => o.ToString()).ToArray();
-            Response.Headers.Add("Link", links);
-            #endregion
-
-            #region Add Loacation header
-            if (response.Headers.Location != null)
+            #region Add headers
+            foreach (var header in response.Headers.AllKeys)
             {
-                Response.Headers.Add("Location", response.Headers.Location);
-            }
-            #endregion
-
-            #region Add Replay-Nonce header
-            if (response.Headers.ReplayNonce != null)
-            {
-                Response.Headers.Add("Replay-Nonce", response.Headers.ReplayNonce);
+                Response.Headers.Add(header, response.Headers.Get(header));
             }
             #endregion
 

@@ -9,6 +9,7 @@ using PeculiarVentures.ACME.Protocol.Messages;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Services;
 using PeculiarVentures.ACME.Web;
+using PeculiarVentures.ACME.Web.Http;
 
 namespace PeculiarVentures.ACME.Server.Controllers
 {
@@ -50,6 +51,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             {
                 StatusCode = 200, // OK
             };
+            resp.Headers.Link.Add(new LinkHeader($"{Options.BaseAddress}directory", new LinkHeaderItem("rel", "index", true)));
             resp.Headers.ReplayNonce = NonceService.Create();
             return resp;
         }
@@ -93,11 +95,18 @@ namespace PeculiarVentures.ACME.Server.Controllers
                         throw new MalformedException("The JWS header MUST have 'url' field");
                     }
 
+                    /// The "jwk" and "kid" fields are mutually exclusive. Servers MUST
+                    /// reject requests that contain both.
+                    if (header.Key != null && header.KeyID != null)
+                    {
+                        throw new MalformedException("The JWS header contains both mutually exclusive fileds 'jwk' and 'kid'");
+                    }
+
                     if (UseJwk)
                     {
                         if (header.Key == null)
                         {
-                            throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'jwk' field", System.Net.HttpStatusCode.BadRequest);
+                            throw new AcmeException(ErrorType.IncorrectResponse, "JWS MUST contain 'jwk' field", System.Net.HttpStatusCode.BadRequest);
                         }
                         if (!token.Verify())
                         {
@@ -116,7 +125,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     {
                         if (header.KeyID == null)
                         {
-                            throw new AcmeException(ErrorType.IncorrectResponse, "JWS MSUT contain 'kid' field", System.Net.HttpStatusCode.BadRequest);
+                            throw new AcmeException(ErrorType.IncorrectResponse, "JWS MUST contain 'kid' field", System.Net.HttpStatusCode.BadRequest);
                         }
 
                         account = AccountService.GetById(GetIdFromLink(header.KeyID));
@@ -285,19 +294,16 @@ namespace PeculiarVentures.ACME.Server.Controllers
                         throw new MalformedException("Request paramter status must be 'deactivated'");
                     }
 
-                    response.Content = AccountService.Deactivate(account.Id);
+                    account = AccountService.Deactivate(account.Id);
                 }
                 else if (@params.Contacts != null)
                 {
                     // Update
-                    response.Content = AccountService.Update(account.Id, @params.Contacts);
-                }
-                else
-                {
-                    response.Content = account;
+                    account = AccountService.Update(account.Id, @params.Contacts);
                 }
 
                 response.Headers.Location = $"{Options.BaseAddress}acct/{account.Id}";
+                response.Content = ConverterService.ToAccount(account);
             }, request);
         }
 
@@ -371,9 +377,22 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 // TODO Check that no account exists whose account key is the same as the key in the "jwk" header parameter of the inner JWS.
                 // in repository
 
-                var updatedAccount = AccountService.ChangeKey(account.Id, jwk);
-                response.Content = ConverterService.ToAccount(updatedAccount);
-                response.StatusCode = 200; // Ok
+                try
+                {
+                    var updatedAccount = AccountService.ChangeKey(account.Id, jwk);
+                    response.Content = ConverterService.ToAccount(updatedAccount);
+                    response.Headers.Location = $"{Options.BaseAddress}acct/{updatedAccount.Id}";
+                    response.StatusCode = 200; // Ok
+                }
+                catch (AcmeException e)
+                {
+                    if (e.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    {
+                        var conflictAccount = AccountService.GetByPublicKey(jwk);
+                        response.Headers.Location = $"{Options.BaseAddress}acct/{conflictAccount.Id}";
+                    }
+                    throw e;
+                }
 
             }, request);
         }
@@ -447,11 +466,11 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 }
                 if (page > 0)
                 {
-                    response.Headers.Link.Add(new Web.Http.LinkHeader($"{link}?cursor={page - 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "previous", true)));
+                    response.Headers.Link.Add(new LinkHeader($"{link}?cursor={page - 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "previous", true)));
                 }
                 if (orderList.NextPage)
                 {
-                    response.Headers.Link.Add(new Web.Http.LinkHeader($"{link}?cursor={page + 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "next", true)));
+                    response.Headers.Link.Add(new LinkHeader($"{link}?cursor={page + 1}{addingString}", new Web.Http.LinkHeaderItem("rel", "next", true)));
                 }
 
                 response.Content = ConverterService.ToOrderList(orderList.Orders);

@@ -11,7 +11,6 @@ using Newtonsoft.Json;
 using NLog;
 using PeculiarVentures.ACME.Helpers;
 using PeculiarVentures.ACME.Web;
-using PeculiarVentures.ACME.Web.Http;
 
 namespace PeculiarVentures.ACME.Client
 {
@@ -84,21 +83,16 @@ namespace PeculiarVentures.ACME.Client
 
         protected async Task<AcmeResponse> Request(
             string url,
-            HttpMethod method = null,
-            object payload = null,
-            bool includePublicKey = false
+            RequestParams @params = null
         )
         {
+            @params = @params ?? new RequestParams();
+
             string content = null;
 
-            if (method == null)
-            {
-                method = HttpMethod.Get;
-            }
+            var request = new HttpRequestMessage(@params.Method, url);
 
-            var request = new HttpRequestMessage(method, url);
-
-            if (payload != null)
+            if (@params.Payload != null)
             {
                 var jws = new JsonWebSignature
                 {
@@ -110,13 +104,13 @@ namespace PeculiarVentures.ACME.Client
                     Algorithm = AlgorithmsEnum.RS256,
                     Nonce = Nonce,
                     Url = url,
-                    KeyID = includePublicKey ? null : Location,
-                    Key = includePublicKey ? new JsonWebKey(Key) : null
+                    KeyID = @params.IncludePublicKey ? null : Location,
+                    Key = @params.IncludePublicKey ? new JsonWebKey(Key) : null
                 });
 
-                if (!(payload is string))
+                if (!(@params.Payload is string))
                 {
-                    jws.SetPayload(payload);
+                    jws.SetPayload(@params.Payload);
                 }
 
                 jws.Sign(Key);
@@ -130,10 +124,20 @@ namespace PeculiarVentures.ACME.Client
                 request.Content.Headers.ContentType = MediaTypeHeader.JsonContentTypeHeaderValue;
             }
 
-            Logger.Debug("Request {method} {path} {token}", method, url, content);
+            // Copy headers to HTTP request from ACME request
+            foreach (var key in @params.Headers.AllKeys)
+            {
+                request.Headers.Add(key, @params.Headers.Get(key));
+            }
 
+            Logger.Debug("Request {method} {path} {token}", @params.Method, url, @params.Headers.ToString(), content);
 
             var response = _http.SendAsync(request).Result;
+
+            // Get Replay-Nonce from response
+            IEnumerable<string> nonceList;
+            response.Headers.TryGetValues(HeaderCollection.ReplayNonceHeader, out nonceList);
+            Nonce = nonceList?.FirstOrDefault();
 
             try
             {
@@ -159,7 +163,7 @@ namespace PeculiarVentures.ACME.Client
 
                 if (string.IsNullOrEmpty(message))
                 {
-                    message = $"Unexpected response status code [{response.StatusCode}] for [{method}] request to [{url}]";
+                    message = $"Unexpected response status code [{response.StatusCode}] for [{@params.Method}] request to [{url}]";
                 }
 
                 var ex = new AcmeException(Protocol.ErrorType.ServerInternal, message);
@@ -169,21 +173,13 @@ namespace PeculiarVentures.ACME.Client
                 throw ex;
             }
 
-            response.Headers.TryGetValues("replay-nonce", out var replayNonceValues);
-            response.Headers.TryGetValues("location", out var locationValues);
-            response.Headers.TryGetValues("link", out var linksValues);
-
-            if (replayNonceValues != null)
-            {
-                Nonce = replayNonceValues.FirstOrDefault();
-            }
-
+            // Copy headers to ACME Response
             var headers = new HeaderCollection();
             foreach (var header in response.Headers)
             {
                 headers.Add(header.Key, string.Join(", ", header.Value));
             }
-
+            
             var acmeResponse = new AcmeResponse
             {
                 StatusCode = (int)response.StatusCode,
@@ -203,24 +199,20 @@ namespace PeculiarVentures.ACME.Client
         protected async Task<AcmeResponse> Request(
             Type type,
             string url,
-            HttpMethod method = null,
-            object payload = null,
-            bool includePublicKey = false
+            RequestParams @params = null
         )
         {
-            var response = await Request(url, method, payload, includePublicKey);
+            var response = await Request(url, @params);
             response.Content = Deserialize((MediaTypeContent)response.Content, type);
             return response;
         }
 
         protected async Task<AcmeResponse<T>> Request<T>(
             string url,
-            HttpMethod method = null,
-            object payload = null,
-            bool includePublicKey = false
+            RequestParams @params = null
         ) where T : class
         {
-            var response = await Request(url, method, payload, includePublicKey);
+            var response = await Request(url, @params);
             response.Content = Deserialize<T>((MediaTypeContent)response.Content);
 
             return response;
@@ -264,7 +256,10 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Getting Nonce value");
 
-            await Request(Directory.NewNonce, HttpMethod.Head);
+            await Request(Directory.NewNonce, new RequestParams
+            {
+                Method = HttpMethod.Head
+            });
         }
 
         /// <summary>
@@ -275,7 +270,12 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Creating a new ACME account. Params:{@params}", account);
 
-            var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount, HttpMethod.Post, account, true);
+            var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount, new RequestParams
+            {
+                Method = HttpMethod.Post,
+                Payload = account,
+                IncludePublicKey = true,
+            });
 
             if (string.IsNullOrEmpty(response.Headers.Location))
             {
@@ -335,7 +335,12 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Updating an ACME account. Params:{@params}", account);
 
-            var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount, HttpMethod.Post, account);
+            var response = await Request(GetType(typeof(Protocol.Account)), Directory.NewAccount,
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = account
+                });
 
             if (string.IsNullOrEmpty(response.Headers.Location))
             {
@@ -376,7 +381,12 @@ namespace PeculiarVentures.ACME.Client
             });
             jws.Sign(keyNew);
 
-            var response = await Request(GetType(typeof(Protocol.Account)), Directory.KeyChange, HttpMethod.Post, jws);
+            var response = await Request(GetType(typeof(Protocol.Account)), Directory.KeyChange,
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = jws
+                });
 
             Key = keyNew;
 
@@ -394,8 +404,11 @@ namespace PeculiarVentures.ACME.Client
             return await Request(
                 GetType(typeof(Protocol.Account)),
                 Location,
-                HttpMethod.Post,
-                new Protocol.Account { Status = Protocol.AccountStatus.Deactivated }
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = new Protocol.Account { Status = Protocol.AccountStatus.Deactivated }
+                }
             );
         }
 
@@ -408,7 +421,12 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Creating a new ACME order. Params:{@params}", order);
 
-            return await Request(GetType(typeof(Protocol.Order)), Directory.NewOrder, HttpMethod.Post, order);
+            return await Request(GetType(typeof(Protocol.Order)), Directory.NewOrder,
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = order
+                });
         }
 
         /// <summary>
@@ -420,14 +438,24 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Getting an ACME order. Params:{@params}", orderUrl);
 
-            return await Request(GetType(typeof(Protocol.Order)), orderUrl, HttpMethod.Post, "");
+            return await Request(GetType(typeof(Protocol.Order)), orderUrl,
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = ""
+                });
         }
 
         public async Task<AcmeResponse<Protocol.OrderList>> OrderListGetAsync(string ordersUrl)
         {
             Logger.Info("Getting an ACME order list. Params:{@params}", ordersUrl);
 
-            return await Request(GetType(typeof(Protocol.OrderList)), ordersUrl, HttpMethod.Post, "");
+            return await Request(GetType(typeof(Protocol.OrderList)), ordersUrl,
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = ""
+                });
         }
 
         /// <summary>
@@ -438,7 +466,12 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Getting an ACME certificate list. Params:{@params}", certificateUrl);
 
-            var response = await Request(certificateUrl, HttpMethod.Post, "");
+            var response = await Request(certificateUrl,
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = ""
+                });
             var chain = new X509Certificate2Collection();
             var mediaContnet = (MediaTypeContent)response.Content;
             var rawData = mediaContnet.ToArray();
@@ -485,8 +518,11 @@ namespace PeculiarVentures.ACME.Client
             return await Request(
                 GetType(typeof(Protocol.Order)),
                 orderUrl,
-                HttpMethod.Post,
-                finalizeOrder
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = finalizeOrder,
+                }
             );
         }
 
@@ -499,7 +535,12 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Creating an ACME authorization. Params:{@params}", authorizationUrl);
 
-            return await Request(GetType(typeof(Protocol.Authorization)), authorizationUrl, HttpMethod.Post, "");
+            return await Request(GetType(typeof(Protocol.Authorization)), authorizationUrl,
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = "",
+                });
         }
 
         /// <summary>
@@ -513,10 +554,13 @@ namespace PeculiarVentures.ACME.Client
             return await Request(
                 GetType(typeof(Protocol.Authorization)),
                 authorizationUrl,
-                HttpMethod.Post,
-                new Protocol.Authorization
+                new RequestParams
                 {
-                    Status = Protocol.AuthorizationStatus.Deactivated
+                    Method = HttpMethod.Post,
+                    Payload = new Protocol.Authorization
+                    {
+                        Status = Protocol.AuthorizationStatus.Deactivated
+                    },
                 }
             );
         }
@@ -529,7 +573,12 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Validating an ACME challenge. Params:{@params}", challengeUrl);
 
-            return await Request(GetType(typeof(Protocol.Challenge)), challengeUrl, HttpMethod.Post, new { });
+            return await Request(GetType(typeof(Protocol.Challenge)), challengeUrl,
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = new { },
+                });
         }
 
         /// <summary>
@@ -540,7 +589,12 @@ namespace PeculiarVentures.ACME.Client
         {
             Logger.Info("Getting an ACME challenge. Params:{@params}", challengeUrl);
 
-            return await Request(GetType(typeof(Protocol.Challenge)), challengeUrl, HttpMethod.Post, "");
+            return await Request(GetType(typeof(Protocol.Challenge)), challengeUrl,
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = "",
+                });
         }
 
         /// <summary>
@@ -553,8 +607,11 @@ namespace PeculiarVentures.ACME.Client
 
             await Request(
                 Directory.RevokeCertificate,
-                HttpMethod.Post,
-                revokeCertificate
+                new RequestParams
+                {
+                    Method = HttpMethod.Post,
+                    Payload = revokeCertificate,
+                }
             );
         }
     }

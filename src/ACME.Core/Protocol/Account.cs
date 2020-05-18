@@ -57,9 +57,6 @@ namespace PeculiarVentures.ACME.Protocol
         //[JsonRequired()]
         public string Orders { get; set; }
 
-        [JsonIgnore]
-        public int Id { get; set; }
-
         /// <summary>
         /// Related for LE.
         /// </summary>
