@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Protocol;
-using PeculiarVentures.ACME.Protocol.Messages;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
-using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
+    /// <summary>
+    /// Converter service
+    /// </summary>
     public class ConverterService : BaseService, IConverterService
     {
         public ConverterService(
@@ -37,11 +37,7 @@ namespace PeculiarVentures.ACME.Server.Services
         private IOrderAuthorizationRepository OrderAuthorizationRepository { get; }
 
         #region Account
-        /// <summary>
-        /// Connverts IAccount to JSON account
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public Account ToAccount(IAccount data)
         {
             var result = CreateInstance<Account>();
@@ -49,11 +45,11 @@ namespace PeculiarVentures.ACME.Server.Services
         }
 
         /// <summary>
-        /// Assign values from IAccount to JSON account.
+        /// Assign values from <see cref="IAccount"/> to JSON <see cref="Account"/>.
         /// For expended objects need add assign values
         /// </summary>
-        /// <param name="account"></param>
-        /// <param name="data"></param>
+        /// <param name="account">JSON <see cref="Account"/></param>
+        /// <param name="data"><see cref="IAccount"/></param>
         protected virtual Account OnToAccountConvert(Account account, IAccount data)
         {
             account.Contacts = data.Contacts?.ToArray();
@@ -71,11 +67,7 @@ namespace PeculiarVentures.ACME.Server.Services
         #endregion
 
         #region Challenge
-        /// <summary>
-        /// Connverts IChallenge to JSON challenge
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public Challenge ToChallenge(IChallenge data)
         {
             var result = CreateInstance<Challenge>();
@@ -83,12 +75,11 @@ namespace PeculiarVentures.ACME.Server.Services
         }
 
         /// <summary>
-        /// Assign values from IChallenge to JSON challenge.
+        /// Assign values from <see cref="IChallenge"/> to JSON <see cref="Challenge"/>.
         /// For expended objects need add assign values  
         /// </summary>
-        /// <param name="chall"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <param name="chall">JSON <see cref="Challenge"/></param>
+        /// <param name="data"><see cref="IChallenge"/></param>
         protected virtual Challenge OnToChallengeConvert(Challenge chall, IChallenge data)
         {
             chall.Status = data.Status;
@@ -102,11 +93,7 @@ namespace PeculiarVentures.ACME.Server.Services
         #endregion
 
         #region Error
-        /// <summary>
-        /// Connverts IError to JSON error
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public Error ToError(IError data)
         {
             var result = CreateInstance<Error>();
@@ -114,12 +101,11 @@ namespace PeculiarVentures.ACME.Server.Services
         }
 
         /// <summary>
-        /// Assign values from IError to JSON error.
+        /// Assign values from <see cref="IError"/> to JSON <see cref="Error"/>.
         /// For expended objects need add assign values   
         /// </summary>
-        /// <param name="err"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <param name="err">JSON <see cref="Error"/></param>
+        /// <param name="data"><see cref="IError"/></param>
         protected virtual Error OnToErrorConvert(Error err, IError data)
         {
             err.Detail = data.Detail;
@@ -130,11 +116,7 @@ namespace PeculiarVentures.ACME.Server.Services
         #endregion
 
         #region Authorization
-        /// <summary>
-        /// Connverts IAuthorization to JSON authorization
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public Authorization ToAuthorization(IAuthorization data)
         {
             var challenges = ChallengeRepository.GetByAuthorization(data.Id);
@@ -143,13 +125,12 @@ namespace PeculiarVentures.ACME.Server.Services
         }
 
         /// <summary>
-        /// Assign values from IAuthorization to JSON authorization.
+        /// Assign values from <see cref="IAuthorization"/> to JSON <see cref="Authorization"/>.
         /// For expended objects need add assign values  
         /// </summary>
-        /// <param name="auth"></param>
-        /// <param name="data"></param>
-        /// <param name="chall"></param>
-        /// <returns></returns>
+        /// <param name="auth">JSON <see cref="Authorization"/></param>
+        /// <param name="data"><see cref="IAuthorization"/></param>
+        /// <param name="chall">Array of <see cref="IChallenge"/></param>
         protected virtual Authorization OnToAuthorizationConvert(Authorization auth, IAuthorization data, IChallenge[] chall)
         {
             auth.Expires = data.Expires;
@@ -168,23 +149,26 @@ namespace PeculiarVentures.ACME.Server.Services
         #endregion
 
         #region Order
-        /// <summary>
-        /// Connverts IOrder to JSON order
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public Order ToOrder(IOrder data)
         {
             var result = CreateInstance<Order>();
             return OnToOrderConvert(result, data);
         }
-        
+
+        /// <inheritdoc/>
         public Protocol.OrderList ToOrderList(IOrder[] orders)
         {
             var orderList = CreateInstance<Protocol.OrderList>();
             return OnToOrderListConvert(orderList, orders);
         }
 
+        /// <summary>
+        /// Converts array of <see cref="IOrder"/> to JSON <see cref="Protocol.OrderList"/>
+        /// For expended objects need add assign values
+        /// </summary>
+        /// <param name="orderList">JSON <see cref="Protocol.OrderList"/></param>
+        /// <param name="orders">Array of <see cref="IOrder"/></param>
         protected virtual Protocol.OrderList OnToOrderListConvert(Protocol.OrderList orderList, IOrder[] orders)
         {
             var ordersId = orders.Select(o => $"{Options.BaseAddress}order/{o.Id}");
@@ -193,13 +177,11 @@ namespace PeculiarVentures.ACME.Server.Services
         }
 
         /// <summary>
-        /// Assign values from IOrder to JSON order.
+        /// Assign values from <see cref="IOrder"/> to JSON <see cref="Order"/>.
         /// For expended objects need add assign values   
         /// </summary>
-        /// <param name="order"></param>
-        /// <param name="data"></param>
-        /// <param name="authzs"></param>
-        /// <returns></returns>
+        /// <param name="order">JSON <see cref="Order"/></param>
+        /// <param name="data"><see cref="IOrder"/></param>
         protected virtual Order OnToOrderConvert(Order order, IOrder data)
         {
             var authzs = OrderAuthorizationRepository.GetByOrder(data.Id)
@@ -234,11 +216,7 @@ namespace PeculiarVentures.ACME.Server.Services
         /// </summary>
         protected Dictionary<Type, Type> Types { get; } = new Dictionary<Type, Type>();
 
-        /// <summary>
-        /// Returns type from Types by key
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public Type GetType(Type type)
         {
             if (Types.TryGetValue(type, out Type result))
@@ -248,11 +226,7 @@ namespace PeculiarVentures.ACME.Server.Services
             return type;
         }
 
-        /// <summary>
-        /// Returns type from Types by key
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public Type GetType<T>()
             where T: class, new()
         {

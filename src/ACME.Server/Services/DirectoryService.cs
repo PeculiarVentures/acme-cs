@@ -4,6 +4,9 @@ using PeculiarVentures.ACME.Protocol;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
+    /// <summary>
+    /// Directory service
+    /// </summary>
     public class DirectoryService : BaseService, IDirectoryService
     {
         public DirectoryService(
@@ -12,6 +15,7 @@ namespace PeculiarVentures.ACME.Server.Services
         {
         }
 
+        /// <inheritdoc/>
         public Directory GetDirectory()
         {
             var directory = OnDirectoryBefore();
@@ -25,11 +29,20 @@ namespace PeculiarVentures.ACME.Server.Services
             return OnDirectoryConvert(directory);
         }
 
-        public virtual Directory OnDirectoryBefore()
+        /// <summary>
+        /// Creates new JSON <see cref="Directory"/>
+        /// </summary>
+        protected virtual Directory OnDirectoryBefore()
         {
             return new Directory();
         }
-        public virtual Directory OnDirectoryConvert(Directory directory)
+
+        /// <summary>
+        /// Assign URLs to JSON <see cref="Directory"/>.
+        /// For expended objects need add assign values
+        /// </summary>
+        /// <param name="directory">JSON <see cref="Directory"/></param>
+        protected virtual Directory OnDirectoryConvert(Directory directory)
         {
             var baseUri = new Uri(Options.BaseAddress);
             directory.NewNonce = directory.NewNonce ?? new Uri(baseUri, "new-nonce").ToString();

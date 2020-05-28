@@ -7,6 +7,9 @@ using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
+    /// <summary>
+    /// Authorization service
+    /// </summary>
     public class AuthorizationService : BaseService, IAuthorizationService
     {
         public AuthorizationService(
@@ -22,13 +25,18 @@ namespace PeculiarVentures.ACME.Server.Services
         public IAuthorizationRepository AuthorizationRepository { get; }
         public IChallengeService ChallengeService { get; }
 
+        /// <inheritdoc/>
         public virtual IAuthorization Create(int accountId, Identifier identifier)
         {
+            // Create Authorization
             var authz = AuthorizationRepository.Create();
+
+            // Fill params
             OnCreateParams(authz, accountId, identifier);
 
-
+            // Save authorization
             var addedAuthz = AuthorizationRepository.Add(authz);
+
             // Add challenges
             var http = ChallengeService.Create(addedAuthz.Id, "http-01");
             //var tls = ChallengeService.Create(addedAuthz.Id, "tls-01");
@@ -42,9 +50,9 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <summary>
         /// Fills parameters
         /// </summary>
-        /// <param name="authz"></param>
-        /// <param name="accountId"></param>
-        /// <param name="identifier"></param>
+        /// <param name="authz"><see cref="IAuthorization"/></param>
+        /// <param name="accountId"><see cref="IAccount"/> identifier</param>
+        /// <param name="identifier"><see cref="Identifier"/></param>
         protected virtual void OnCreateParams(IAuthorization authz, int accountId, Identifier identifier)
         {
             authz.Identifier.Type = identifier.Type;
@@ -54,6 +62,7 @@ namespace PeculiarVentures.ACME.Server.Services
             authz.Expires = DateTime.UtcNow.AddDays(Options.ExpireAuthorizationDays);
         }
 
+        /// <inheritdoc/>
         public IAuthorization GetActual(int accountId, Identifier identifier)
         {
             // Get auth from repository
@@ -68,14 +77,15 @@ namespace PeculiarVentures.ACME.Server.Services
             return updatedAuthz;
         }
 
+        /// <inheritdoc/>
         public IAuthorization GetById(int accountId, int authzId)
         {
             var authz = AuthorizationRepository.GetById(authzId);
+
             if (authz == null)
             {
                 throw new MalformedException("Authorization doesn't exist");
             }
-
             if (authz.AccountId != accountId)
             {
                 throw new MalformedException("Access denied");
@@ -85,6 +95,7 @@ namespace PeculiarVentures.ACME.Server.Services
             return updatedAuthz;
         }
 
+        /// <inheritdoc/>
         public IAuthorization RefreshStatus(IAuthorization item)
         {
             if (item.Status != AuthorizationStatus.Pending && item.Status != AuthorizationStatus.Valid)
@@ -95,11 +106,13 @@ namespace PeculiarVentures.ACME.Server.Services
             if (item.Expires != null
                 && item.Expires < DateTime.UtcNow)
             {
+                // Check Expire
                 item.Status = AuthorizationStatus.Expired;
                 AuthorizationRepository.Update(item);
             }
             else
             {
+                // Check status
                 var challenges = ChallengeService.GetByAuthorization(item.Id);
                 if (challenges.Any(o => o.Status == ChallengeStatus.Valid))
                 {

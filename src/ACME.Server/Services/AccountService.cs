@@ -9,6 +9,9 @@ using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
+    /// <summary>
+    /// Account service
+    /// </summary>
     public class AccountService : BaseService, IAccountService
     {
         public AccountService(
@@ -26,11 +29,7 @@ namespace PeculiarVentures.ACME.Server.Services
         public IAccountRepository AccountRepository { get; }
         public IExternalAccountService ExternalAccountService { get; }
 
-        /// <summary>
-        /// Gets an account by id
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public IAccount GetById(int id)
         {
             var account = AccountRepository.GetById(id);
@@ -38,32 +37,21 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 throw new AccountDoesNotExistException();
             }
-
             return account;
         }
 
-        /// <summary>
-        /// Gets an account by public key
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public IAccount GetByPublicKey(JsonWebKey key)
         {
             var account = FindByPublicKey(key);
-
             if (account == null)
             {
                 throw new AccountDoesNotExistException();
             }
-
             return account;
         }
 
-        /// <summary>
-        /// Finds an account by public key
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public IAccount FindByPublicKey(JsonWebKey key)
         {
             #region Check arguments
@@ -76,12 +64,7 @@ namespace PeculiarVentures.ACME.Server.Services
             return AccountRepository.FindByPublicKey(key);
         }
 
-        /// <summary>
-        /// Creates new account
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="params"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public IAccount Create(JsonWebKey key, NewAccount @params)
         {
             #region Check arguments
@@ -143,7 +126,13 @@ namespace PeculiarVentures.ACME.Server.Services
             return account;
         }
 
-        private bool ValidateContacts(string[] contacts)
+        /// <summary>
+        /// Validates array of contacts
+        /// </summary>
+        /// <param name="contacts">Array of contacts</param>
+        /// <exception cref="ArgumentNullException"/>
+        /// <returns cref="bool"></returns>
+        protected bool ValidateContacts(string[] contacts)
         {
             #region Check arguments
             if (contacts is null)
@@ -170,11 +159,21 @@ namespace PeculiarVentures.ACME.Server.Services
             return true;
         }
 
-        protected bool OnValidateContact(string contact)
+        /// <summary>
+        /// Validates contact
+        /// </summary>
+        /// <param name="contact">Contact</param>
+        /// <returns cref="bool"/>
+        protected virtual bool OnValidateContact(string contact)
         {
             return IsMailto(contact);
         }
 
+        /// <summary>
+        /// Validates mail
+        /// </summary>
+        /// <param name="contact">Mail</param>
+        /// <returns cref="bool"/>
         protected bool IsMailto(string contact)
         {
             try
@@ -192,24 +191,25 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <summary>
         /// Fills parameters
         /// </summary>
-        /// <param name="account"></param>
-        /// <param name="key"></param>
-        /// <param name="params"></param>
-        private static void OnCreateParams(IAccount account, JsonWebKey key, NewAccount @params)
+        /// <param name="account">Account</param>
+        /// <param name="key">JSON Web Key (JWK)</param>
+        /// <param name="params">New account parameters</param>
+        protected virtual void OnCreateParams(IAccount account, JsonWebKey key, NewAccount @params)
         {
             account.Key = key;
             account.Contacts = @params.Contacts;
             account.TermsOfServiceAgreed = @params.TermsOfServiceAgreed;
         }
 
-        public IAccount Update(int accountId, string[] contacts)
+        /// <inheritdoc/>
+        public IAccount Update(int accountId, UpdateAccount @params)
         {
             #region Check arguments
-            if (contacts is null)
+            if (@params is null)
             {
-                throw new ArgumentNullException(nameof(contacts));
+                throw new ArgumentNullException(nameof(@params));
             }
-            if (contacts != null && !ValidateContacts(contacts))
+            if (@params.Contacts != null && !ValidateContacts(@params.Contacts))
             {
                 throw new UnsupportedContactException();
             }
@@ -219,7 +219,7 @@ namespace PeculiarVentures.ACME.Server.Services
             var account = GetById(accountId);
 
             // Assign values
-            account.Contacts = contacts;
+            OnUpdateParams(account, @params);
 
             // Save changes
             account = AccountRepository.Update(account);
@@ -230,6 +230,17 @@ namespace PeculiarVentures.ACME.Server.Services
             return account;
         }
 
+        /// <summary>
+        /// Fills parameters
+        /// </summary>
+        /// <param name="account">Account</param>
+        /// <param name="params">Params to update</param>
+        protected virtual void OnUpdateParams(IAccount account, UpdateAccount @params)
+        {
+            account.Contacts = @params.Contacts;
+        }
+
+        /// <inheritdoc/>
         public IAccount Deactivate(int accountId)
         {
             // Get account
@@ -247,6 +258,7 @@ namespace PeculiarVentures.ACME.Server.Services
             return account;
         }
 
+        /// <inheritdoc/>
         public IAccount Revoke(int accountId)
         {
             // Get account
@@ -264,6 +276,7 @@ namespace PeculiarVentures.ACME.Server.Services
             return account;
         }
 
+        /// <inheritdoc/>
         public IAccount ChangeKey(int accountId, JsonWebKey key)
         {
             #region Check arguments

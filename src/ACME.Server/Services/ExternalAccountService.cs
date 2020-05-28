@@ -8,6 +8,9 @@ using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
+    /// <summary>
+    /// External account service
+    /// </summary>
     public class ExternalAccountService : BaseService, IExternalAccountService
     {
         public ExternalAccountService(
@@ -21,6 +24,7 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public IExternalAccountRepository ExternalAccountRepository { get; }
 
+        /// <inheritdoc/>
         public IExternalAccount Create(object data)
         {
             #region Check arguments
@@ -59,6 +63,7 @@ namespace PeculiarVentures.ACME.Server.Services
             }
         }
 
+        /// <inheritdoc/>
         public IExternalAccount Validate(JsonWebKey accountKey, JsonWebSignature token)
         {
             #region Check arguments
@@ -98,12 +103,15 @@ namespace PeculiarVentures.ACME.Server.Services
             return externalAccount;
         }
 
+        /// <inheritdoc/>
         public IExternalAccount GetById(string kid)
         {
             var id = GetKeyIdentifier(kid);
             return GetById(id);
 
         }
+
+        /// <inheritdoc/>
         public IExternalAccount GetById(int id)
         {
             var externalAccount = ExternalAccountRepository.GetById(id)

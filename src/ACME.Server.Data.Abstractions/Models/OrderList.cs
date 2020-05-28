@@ -1,6 +1,8 @@
-﻿using System;
-namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
+﻿namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
 {
+    /// <summary>
+    /// List of orders
+    /// </summary>
     public class OrderList : IOrderList
     {
         public IOrder[] Orders { get; set; }

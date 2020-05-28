@@ -25,8 +25,8 @@ namespace PeculiarVentures.ACME.Server.Services
         /// <summary>
         /// Returns <see cref="IAccount"/> by specified Id
         /// </summary>
-        /// <param name="accountId"></param>
-        /// <returns>Account</returns>
+        /// <param name="accountId"><see cref="IAccount"/> identifier</param>
+        /// <returns><see cref="IAccount"/></returns>
         /// <exception cref="AccountDoesNotExistException"/>
         IAccount GetById(int accountId);
         /// <summary>
@@ -55,11 +55,11 @@ namespace PeculiarVentures.ACME.Server.Services
         /// Updates an <see cref="IAccount"/>
         /// </summary>
         /// <param name="accountId"><see cref="IAccount"/> identifier</param>
-        /// <param name="contacts">List of contacts</param>
+        /// <param name="@params">Params to update</param>
         /// <returns><see cref="IAccount"/></returns>
         /// <exception cref="AccountDoesNotExistException"/>
         /// <exception cref="ArgumentNullException"/>
-        IAccount Update(int accountId, string[] contacts);
+        IAccount Update(int accountId, UpdateAccount @params);
         /// <summary>
         /// Changes key for <see cref="IAccount"/>
         /// </summary>

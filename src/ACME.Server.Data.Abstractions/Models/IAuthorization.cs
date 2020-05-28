@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using PeculiarVentures.ACME.Protocol;
 
 namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
@@ -29,6 +28,9 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// </summary>
         bool? Wildcard { get; set; }
 
+        /// <summary>
+        /// The identifier of account
+        /// </summary>
         int AccountId { get; set; }
     }
 }

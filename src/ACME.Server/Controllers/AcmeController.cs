@@ -45,6 +45,10 @@ namespace PeculiarVentures.ACME.Server.Controllers
         public ServerOptions Options { get; }
         protected ILogger Logger { get; } = LogManager.GetLogger("ACME.Controller");
 
+        /// <summary>
+        /// Creates <see cref="AcmeResponse"/> with headers
+        /// </summary>
+        /// <returns></returns>
         public AcmeResponse CreateResponse()
         {
             var resp = new AcmeResponse
@@ -178,6 +182,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             return response;
         }
 
+        /// <inheritdoc/>
         public AcmeResponse GetDirectory(AcmeRequest request)
         {
             return WrapAction((response) =>
@@ -187,6 +192,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
+        /// <inheritdoc/>
         public AcmeResponse GetNonce(AcmeRequest request)
         {
             return WrapAction((response) =>
@@ -218,7 +224,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
         }
 
         #region Account management
-
         /// <summary>
         /// Gets account by kid
         /// </summary>
@@ -226,9 +231,11 @@ namespace PeculiarVentures.ACME.Server.Controllers
         /// <returns>Account</returns>
         /// <exception cref="MalformedException"/>
         /// <exception cref="AccountDoesNotExistException"/>
-        protected IAccount GetAccount(string kid)
+        protected IAccount GetAccount(AcmeRequest request)
         {
-            var account = AccountService.GetById(GetIdFromLink(kid));
+            var header = request.Token.GetProtected();
+
+            var account = AccountService.GetById(GetIdFromLink(header.KeyID));
 
             if (account.Status == AccountStatus.Deactivated)
             {
@@ -238,6 +245,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             return account;
         }
 
+        /// <inheritdoc/>
         public AcmeResponse CreateAccount(AcmeRequest request)
         {
             return WrapAction(response =>
@@ -276,14 +284,14 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request, true);
         }
 
+        /// <inheritdoc/>
         public AcmeResponse PostAccount(AcmeRequest request)
         {
             return WrapAction((response) =>
             {
-                var header = request.Token.GetProtected();
                 var @params = (UpdateAccount)request.GetContent(ConverterService.GetType<UpdateAccount>());
 
-                var account = GetAccount(header.KeyID);
+                var account = GetAccount(request);
                 AssertAccountStatus(account);
 
                 if (@params.Status != null)
@@ -299,7 +307,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 else if (@params.Contacts != null)
                 {
                     // Update
-                    account = AccountService.Update(account.Id, @params.Contacts);
+                    account = AccountService.Update(account.Id, @params);
                 }
 
                 response.Headers.Location = $"{Options.BaseAddress}acct/{account.Id}";
@@ -307,6 +315,10 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
+        /// <summary>
+        /// Checks account status on "deactivate" status
+        /// </summary>
+        /// <param name="account"></param>
         public void AssertAccountStatus(IAccount account)
         {
             // If a server receives a POST or POST-as-GET from a
@@ -318,6 +330,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }
         }
 
+        /// <inheritdoc/>
         public AcmeResponse ChangeKey(AcmeRequest request)
         {
             return WrapAction((response) =>
@@ -325,7 +338,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 var reqProtected = request.Token.GetProtected();
 
                 // Validate the POST request belongs to a currently active account, as described in Section 6.
-                var account = GetAccount(reqProtected.KeyID);
+                var account = GetAccount(request);
                 var jws = request.Token;
                 if (!jws.Verify(account.Key.GetPublicKey()))
                 {
@@ -400,44 +413,62 @@ namespace PeculiarVentures.ACME.Server.Controllers
         #endregion
 
         #region Order management
-
+        /// <inheritdoc/>
         public AcmeResponse CreateOrder(AcmeRequest request)
         {
             return WrapAction((response) =>
             {
-                var header = request.Token.GetProtected();
-                var account = GetAccount(header.KeyID);
+                // get account
+                var account = GetAccount(request);
+
+                // get params
                 var @params = (NewOrder)request.GetContent(ConverterService.GetType<NewOrder>());
 
+                // get order
                 var order = OrderService.GetActual(account.Id, @params);
                 if (order == null)
                 {
+                    // create order
                     order = OrderService.Create(account.Id, @params);
                     response.StatusCode = 201; // Created
                 }
+
+                // add headers
                 response.Headers.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
+
+                // convert to JSON
                 response.Content = ConverterService.ToOrder(order);
             }, request);
         }
 
+        /// <inheritdoc/>
         public AcmeResponse PostOrder(AcmeRequest request, int orderId)
         {
             return WrapAction((response) =>
             {
-                var header = request.Token.GetProtected();
-                var account = GetAccount(header.KeyID);
+                // get account
+                var account = GetAccount(request);
+
+                // get order
                 var order = OrderService.GetById(account.Id, orderId);
+
+                // add headers
                 response.Headers.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
+
+                // convert to JSON
                 response.Content = ConverterService.ToOrder(order);
             }, request);
         }
 
+        /// <inheritdoc/>
         public AcmeResponse PostOrders(AcmeRequest request)
         {
             return WrapAction((response) =>
             {
-                var header = request.Token.GetProtected();
-                var account = GetAccount(header.KeyID);
+                // get account
+                var account = GetAccount(request);
+
+                // get orders
                 var @params = request.Query;
                 var orderList = OrderService.GetList(account.Id, @params);
 
@@ -477,15 +508,19 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
+        /// <inheritdoc/>
         public AcmeResponse FinalizeOrder(AcmeRequest request, int orderId)
         {
             return WrapAction((response) =>
             {
-                var header = request.Token.GetProtected();
-                var account = GetAccount(header.KeyID);
+                // get account
+                var account = GetAccount(request);
+
+                // enroll certificate
                 var @params = (FinalizeOrder)request.GetContent(ConverterService.GetType<FinalizeOrder>());
                 var order = OrderService.EnrollCertificate(account.Id, orderId, @params);
 
+                // add headers
                 response.Headers.Location = new Uri(new Uri(Options.BaseAddress), $"order/{order.Id}").ToString();
                 response.Content = ConverterService.ToOrder(order);
             }, request);
@@ -493,13 +528,14 @@ namespace PeculiarVentures.ACME.Server.Controllers
         #endregion
 
         #region Challenge
+        /// <inheritdoc/>
         public AcmeResponse PostChallenge(AcmeRequest request, int challengeId)
         {
             return WrapAction((response) =>
             {
-                var header = request.Token.GetProtected();
-                var account = GetAccount(header.KeyID);
+                var account = GetAccount(request);
 
+                // get challenge
                 var challenge = ChallengeService.GetById(challengeId);
                 _ = AuthorizationService.GetById(account.Id, challenge.AuthorizationId);
 
@@ -514,26 +550,28 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
         #endregion
 
+        #region Authorization
+        /// <inheritdoc/>
         public AcmeResponse PostAuthorization(AcmeRequest request, int authzId)
         {
             return WrapAction((response) =>
             {
-                var header = request.Token.GetProtected();
-                var account = GetAccount(header.KeyID);
+                var account = GetAccount(request);
 
                 var authz = AuthorizationService.GetById(account.Id, authzId);
 
                 response.Content = ConverterService.ToAuthorization(authz);
             }, request);
         }
+        #endregion
 
         #region Certificate management
+        /// <inheritdoc/>
         public AcmeResponse GetCertificate(AcmeRequest request, string thumbprint)
         {
             return WrapAction((response) =>
             {
-                var header = request.Token.GetProtected();
-                var account = GetAccount(header.KeyID);
+                var account = GetAccount(request);
                 var certs = OrderService.GetCertificate(account.Id, thumbprint);
 
                 switch (Options.DownloadCertificateFormat)
@@ -561,6 +599,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
             }, request);
         }
 
+        /// <inheritdoc/>
         public AcmeResponse RevokeCertificate(AcmeRequest request)
         {
             return WrapAction((response) =>
@@ -569,7 +608,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 var @params = (RevokeCertificate)request.GetContent(ConverterService.GetType<RevokeCertificate>());
                 if (header.KeyID != null)
                 {
-                    var account = GetAccount(header.KeyID);
+                    var account = GetAccount(request);
                     OrderService.RevokeCertificate(account.Id, @params);
                 }
                 else

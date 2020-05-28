@@ -2,10 +2,12 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
-using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
+    /// <summary>
+    /// Nonce service
+    /// </summary>
     public class NonceService : BaseService, INonceService
     {
         public INonceRepository NonceRepository { get; }
@@ -19,13 +21,14 @@ namespace PeculiarVentures.ACME.Server.Services
                 ?? throw new ArgumentNullException(nameof(nonceRepository));
         }
 
+        /// <inheritdoc/>
         public string Create()
         {
             var nonce = NonceRepository.Create();
-
             return nonce;
         }
 
+        /// <inheritdoc/>
         public void Validate(string nonce)
         {
             AssertNonce(nonce);
@@ -37,6 +40,11 @@ namespace PeculiarVentures.ACME.Server.Services
             NonceRepository.Remove(nonce);
         }
 
+        /// <summary>
+        /// Asserts nonce
+        /// </summary>
+        /// <param name="nonce"></param>
+        /// <exception cref="MalformedException"/>
         protected void AssertNonce(string nonce)
         {
             if (nonce is null)

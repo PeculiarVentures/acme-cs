@@ -25,7 +25,15 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// Error that occurred while the server was validating the challenge.
         /// </summary>
         IError Error { get; set; }
-        string Token { get; set; }        
+
+        /// <summary>
+        /// The token of this challenge
+        /// </summary>
+        string Token { get; set; }
+
+        /// <summary>
+        /// The identifier of authorization
+        /// </summary>
         int AuthorizationId { get; set; }
     }
 }

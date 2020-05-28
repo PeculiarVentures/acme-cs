@@ -7,8 +7,8 @@
     <PackageId>PeculiarVentures.ACME.Client</PackageId>
     <Authors>PeculiarVentures.ACME.Client</Authors>
     <Description>ACME Client</Description>
-    <PackageVersion>0.1.24</PackageVersion>
-    <ReleaseVersion>0.1.24</ReleaseVersion>
+    <PackageVersion>0.2.0</PackageVersion>
+    <ReleaseVersion>0.2.0</ReleaseVersion>
   </PropertyGroup>
 
   <ItemGroup>

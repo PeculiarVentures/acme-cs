@@ -5,6 +5,9 @@ using NLog;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
+    /// <summary>
+    /// Base service
+    /// </summary>
     public class BaseService
     {
         protected ILogger Logger { get; } = LogManager.GetLogger("ACME.Service");
@@ -15,8 +18,16 @@ namespace PeculiarVentures.ACME.Server.Services
                 ?? throw new ArgumentNullException(nameof(options));
         }
 
+        /// <summary>
+        /// Server options
+        /// </summary>
         public ServerOptions Options { get; }
 
+        /// <summary>
+        /// Returns id of kid
+        /// </summary>
+        /// <param name="kid">URL key</param>
+        /// <returns cref="MalformedException"/>
         public int GetKeyIdentifier(string kid)
         {
             var match = new Regex("([0-9]+)$").Match(kid);

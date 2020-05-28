@@ -1,6 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Net;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using PeculiarVentures.ACME.Helpers;
@@ -10,9 +10,11 @@ using PeculiarVentures.ACME.Server.Data.Abstractions.Repositories;
 
 namespace PeculiarVentures.ACME.Server.Services
 {
+    /// <summary>
+    /// Challenge service
+    /// </summary>
     public class ChallengeService : BaseService, IChallengeService
     {
-
         public ChallengeService(IChallengeRepository challengeRepository,
                                 IAuthorizationRepository authorizationRepository,
                                 IAccountService accountService,
@@ -23,14 +25,15 @@ namespace PeculiarVentures.ACME.Server.Services
                 ?? throw new ArgumentNullException(nameof(challengeRepository));
             AuthorizationRepository = authorizationRepository
                 ?? throw new ArgumentNullException(nameof(authorizationRepository));
-            AccountService = accountService 
+            AccountService = accountService
                 ?? throw new ArgumentNullException(nameof(accountService));
         }
 
-        private IAccountService AccountService { get; }
         private IChallengeRepository ChallengeRepository { get; }
         private IAuthorizationRepository AuthorizationRepository { get; }
+        private IAccountService AccountService { get; }
 
+        /// <inheritdoc/>
         public IChallenge Create(int authzId, string type)
         {
             var challenge = ChallengeRepository.Create();
@@ -59,6 +62,7 @@ namespace PeculiarVentures.ACME.Server.Services
             challenge.Token = Base64Url.Encode(httpToken);
         }
 
+        /// <inheritdoc/>
         public IChallenge[] GetByAuthorization(int id)
         {
             var chall = ChallengeRepository.GetByAuthorization(id);
@@ -69,6 +73,7 @@ namespace PeculiarVentures.ACME.Server.Services
             return chall;
         }
 
+        /// <inheritdoc/>
         public IChallenge GetById(int id)
         {
             var chall = ChallengeRepository.GetById(id);
@@ -79,6 +84,7 @@ namespace PeculiarVentures.ACME.Server.Services
             return chall;
         }
 
+        /// <inheritdoc/>
         public void Validate(IChallenge challenge)
         {
             if (challenge.Status == ChallengeStatus.Pending)
@@ -91,7 +97,8 @@ namespace PeculiarVentures.ACME.Server.Services
                 Task
                     .Run(() =>
                     {
-                    switch (challenge.Type)
+                        // validate challenge
+                        switch (challenge.Type)
                         {
                             case "http-01":
                                 ValidateHttpChallenge(challenge);
@@ -102,9 +109,9 @@ namespace PeculiarVentures.ACME.Server.Services
                     })
                     .ContinueWith(t =>
                     {
+                        // Fault validate
                         if (t.IsFaulted)
                         {
-                            // TODO Optimize Error assignment
                             Error err = t.Exception.InnerException;
                             challenge.Error = ChallengeRepository.CreateError();
                             challenge.Error.Detail = err.Detail;
@@ -112,6 +119,8 @@ namespace PeculiarVentures.ACME.Server.Services
                             challenge.Status = ChallengeStatus.Invalid;
                             ChallengeRepository.Update(challenge);
                         }
+
+                        //Complete validate 
                         if (t.IsCompleted)
                         {
                             if (challenge.Status == ChallengeStatus.Processing)
@@ -132,6 +141,10 @@ namespace PeculiarVentures.ACME.Server.Services
 
         }
 
+        /// <summary>
+        /// Validates the http challenge
+        /// </summary>
+        /// <param name="challenge"><see cref="IChallenge"/></param>
         private void ValidateHttpChallenge(IChallenge challenge)
         {
             var authz = AuthorizationRepository.GetById(challenge.AuthorizationId) ?? throw new MalformedException("Cannot get Authorization by Id");

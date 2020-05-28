@@ -3,6 +3,9 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PeculiarVentures.ACME.Server
 {
+    /// <summary>
+    /// Server options
+    /// </summary>
     public class ServerOptions
     {
         public DownloadCertificateFormat DownloadCertificateFormat { get; set; } = DownloadCertificateFormat.PemCertificateChain;

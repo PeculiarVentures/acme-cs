@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
 using PeculiarVentures.ACME.Protocol;
 
 namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
@@ -46,6 +44,9 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// <remarks>Controllers layer MUST compleate this value to full URI path</remarks>
         ICertificate Certificate { get; set; }
 
+        /// <summary>
+        /// The identifier of account
+        /// </summary>
         int AccountId { get; set; }
     }
 }
