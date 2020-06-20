@@ -143,30 +143,44 @@ namespace PeculiarVentures.ACME.Client
             {
                 response.EnsureSuccessStatusCode();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException httpEx)
             {
                 string message = null;
-
+                string errorJson = null;
+                Protocol.Error error = null;
                 try
                 {
-                    var errorJson = await response.Content.ReadAsStringAsync();
-                    var error = JsonConvert.DeserializeObject<Protocol.Error>(errorJson);
+                    errorJson = await response.Content.ReadAsStringAsync();
 
-                    message = $"{error.Type}: {error.Detail}";
-                    Logger.Debug("ACME Error {@error}", error);
+                    try
+                    {
+                        error = JsonConvert.DeserializeObject<Protocol.Error>(errorJson);
+
+                        message = $"{error.Type}: {error.Detail}";
+                        Logger.Debug("ACME Error {@error}", error);
+                    }
+                    catch
+                    {
+                        Logger.Error("Cannot parse ACME Error from Client response");
+                        Logger.Debug(errorJson);
+                    }
                 }
-                catch
+                catch (System.Exception e)
                 {
-                    Logger.Error("Cannot parse ACME Error from Client response");
-                    Logger.Debug(await response.Content.ReadAsStringAsync());
+                    Logger.Error("Cannot parse content from Client response");
+                    Logger.Debug(e);
                 }
 
+                AcmeException ex;
                 if (string.IsNullOrEmpty(message))
                 {
                     message = $"Unexpected response status code [{response.StatusCode}] for [{@params.Method}] request to [{url}]";
+                    ex = new AcmeException(Protocol.ErrorType.ServerInternal, message, response.StatusCode);
                 }
-
-                var ex = new AcmeException(Protocol.ErrorType.ServerInternal, message);
+                else
+                {
+                    ex = new AcmeException(error.Type, error.Detail, response.StatusCode);
+                }
 
                 Logger.Error(ex);
 
@@ -179,7 +193,7 @@ namespace PeculiarVentures.ACME.Client
             {
                 headers.Add(header.Key, string.Join(", ", header.Value));
             }
-            
+
             var acmeResponse = new AcmeResponse
             {
                 StatusCode = (int)response.StatusCode,
