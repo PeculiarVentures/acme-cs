@@ -10,8 +10,8 @@
     <PackageId>PeculiarVentures.ACME.Server.AspNetCore</PackageId>
     <Authors>PeculiarVentures</Authors>
     <Title>PeculiarVentures.ACME.Server.AspNetCore</Title>
-    <ReleaseVersion>0.2.0</ReleaseVersion>
-    <PackageVersion>0.2.0</PackageVersion>
+    <ReleaseVersion>0.2.1</ReleaseVersion>
+    <PackageVersion>0.2.1</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

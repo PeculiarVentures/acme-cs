@@ -9,8 +9,8 @@
     <Owners>PeculiarVentures</Owners>
     <Title>PeculiarVentures.ACME.Server</Title>
     <Description>ACME Server base classes library</Description>
-    <ReleaseVersion>0.2.0</ReleaseVersion>
-    <PackageVersion>0.2.0</PackageVersion>
+    <ReleaseVersion>0.2.1</ReleaseVersion>
+    <PackageVersion>0.2.1</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
