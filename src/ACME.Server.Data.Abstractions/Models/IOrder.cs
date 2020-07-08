@@ -3,7 +3,7 @@ using PeculiarVentures.ACME.Protocol;
 
 namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
 {
-    public interface IOrder : IBaseObject
+    public interface IOrder : IBaseObject, IAccountId
     {
         /// <summary>
         /// The status of this order. Possible values are "pending", "ready",
@@ -43,10 +43,5 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// </summary>
         /// <remarks>Controllers layer MUST compleate this value to full URI path</remarks>
         ICertificate Certificate { get; set; }
-
-        /// <summary>
-        /// The identifier of account
-        /// </summary>
-        int AccountId { get; set; }
     }
 }

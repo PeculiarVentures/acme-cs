@@ -15,15 +15,21 @@ namespace PeculiarVentures.ACME.Server.Services
         public AuthorizationService(
             IAuthorizationRepository authorizationRepository,
             IChallengeService challengeService,
+            IAccountService accountService,
+            IAccountSecurityService accountSecurityService,
             IOptions<ServerOptions> options)
             : base(options)
         {
             AuthorizationRepository = authorizationRepository ?? throw new ArgumentNullException(nameof(authorizationRepository));
             ChallengeService = challengeService ?? throw new ArgumentNullException(nameof(challengeService));
+            AccountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
+            AccountSecurityService = accountSecurityService ?? throw new ArgumentNullException(nameof(accountSecurityService));
         }
 
         public IAuthorizationRepository AuthorizationRepository { get; }
         public IChallengeService ChallengeService { get; }
+        public IAccountService AccountService { get; }
+        public IAccountSecurityService AccountSecurityService { get; }
 
         /// <inheritdoc/>
         public virtual IAuthorization Create(int accountId, Identifier identifier)
@@ -86,12 +92,15 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 throw new MalformedException("Authorization doesn't exist");
             }
-            if (authz.AccountId != accountId)
-            {
-                throw new MalformedException("Access denied");
-            }
 
             var updatedAuthz = RefreshStatus(authz);
+
+            AccountSecurityService.CheckAccess(new AccountAccess
+            {
+                Account = AccountService.GetById(accountId),
+                Target = updatedAuthz,
+            });
+
             return updatedAuthz;
         }
 

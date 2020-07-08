@@ -26,6 +26,7 @@ namespace PeculiarVentures.ACME.Server.Services
         public OrderService(
             IOrderRepository orderRepository,
             IAccountService accountService,
+            IAccountSecurityService accountSecurityService,
             IAuthorizationService authorizationService,
             IOrderAuthorizationRepository orderAuthorizationRepository,
             ICertificateEnrollmentService certificateEnrollmentService,
@@ -36,6 +37,8 @@ namespace PeculiarVentures.ACME.Server.Services
                 ?? throw new ArgumentNullException(nameof(orderRepository));
             AccountService = accountService
                 ?? throw new ArgumentNullException(nameof(accountService));
+            AccountSecurityService = accountSecurityService
+                ?? throw new ArgumentNullException(nameof(accountSecurityService));
             AuthorizationService = authorizationService
                 ?? throw new ArgumentNullException(nameof(authorizationService));
             OrderAuthorizationRepository = orderAuthorizationRepository
@@ -46,6 +49,7 @@ namespace PeculiarVentures.ACME.Server.Services
 
         public IOrderRepository OrderRepository { get; }
         public IAccountService AccountService { get; }
+        public IAccountSecurityService AccountSecurityService { get; }
         public IAuthorizationService AuthorizationService { get; }
         public IOrderAuthorizationRepository OrderAuthorizationRepository { get; }
         public ICertificateEnrollmentService CertificateEnrollmentService { get; }
@@ -278,10 +282,11 @@ namespace PeculiarVentures.ACME.Server.Services
             }
 
             // check access
-            if (order.AccountId != accountId)
+            AccountSecurityService.CheckAccess(new AccountAccess
             {
-                throw new MalformedException("Access denied");
-            }
+                Account = AccountService.GetById(accountId),
+                Target = order,
+            });
 
             return order;
         }
@@ -386,10 +391,11 @@ namespace PeculiarVentures.ACME.Server.Services
             }
 
             // check access
-            if (order.AccountId != accountId)
+            AccountSecurityService.CheckAccess(new AccountAccess
             {
-                throw new MalformedException("Access denied"); // TODO Check RFC Error
-            }
+                Account = AccountService.GetById(accountId),
+                Target = order,
+            });
             return order;
         }
 

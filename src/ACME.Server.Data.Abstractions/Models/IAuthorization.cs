@@ -3,7 +3,7 @@ using PeculiarVentures.ACME.Protocol;
 
 namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
 {
-    public interface IAuthorization : IBaseObject
+    public interface IAuthorization : IBaseObject, IAccountId
     {
         /// <summary>
         /// The identifier that the account is authorized to represent.
