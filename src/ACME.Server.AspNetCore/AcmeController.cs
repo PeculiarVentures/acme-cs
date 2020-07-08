@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using PeculiarVentures.ACME.Protocol;
 using PeculiarVentures.ACME.Server.Controllers;
-using PeculiarVentures.ACME.Server.Data.Abstractions.Models;
 using PeculiarVentures.ACME.Web;
-using PeculiarVentures.ACME.Web.Http;
 
 namespace PeculiarVentures.ACME.Server.AspNetCore
 {

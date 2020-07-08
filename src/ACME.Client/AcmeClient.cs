@@ -143,7 +143,7 @@ namespace PeculiarVentures.ACME.Client
             {
                 response.EnsureSuccessStatusCode();
             }
-            catch (HttpRequestException httpEx)
+            catch (HttpRequestException)
             {
                 string message = null;
                 string errorJson = null;

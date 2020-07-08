@@ -20,8 +20,6 @@ namespace PeculiarVentures.ACME.Server.AspNet
 
         public IAcmeController Controller { get; }
 
-        public Uri BaseUri => new Uri($"{Controller.Options.BaseAddress ?? throw new ArgumentException(nameof(Controller.Options.BaseAddress))}");
-
         public virtual HttpResponseMessage GetDirectory()
         {
             var response = Controller.GetDirectory(GetAcmeRequest());
@@ -129,13 +127,6 @@ namespace PeculiarVentures.ACME.Server.AspNet
         public virtual HttpResponseMessage NewAccount(JsonWebSignature token)
         {
             var response = Controller.CreateAccount(GetAcmeRequest(token));
-
-            if (response.Headers.Location != null)
-            {
-                // Complete Location
-                response.Headers.Location = new Uri(BaseUri, $"acct/{response.Headers.Location}").ToString();
-            }
-
             return CreateHttpResponseMessage(response);
         }
 
