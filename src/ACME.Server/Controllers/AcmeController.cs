@@ -103,7 +103,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     /// reject requests that contain both.
                     if (header.Key != null && header.KeyID != null)
                     {
-                        throw new MalformedException("The JWS header contains both mutually exclusive fileds 'jwk' and 'kid'");
+                        throw new MalformedException("The JWS header contains both mutually exclusive fields 'jwk' and 'kid'");
                     }
 
                     if (UseJwk)
@@ -120,10 +120,6 @@ namespace PeculiarVentures.ACME.Server.Controllers
                         account = AccountService.FindByPublicKey(header.Key);
                         // If a server receives a POST or POST-as-GET from a deactivated account, it MUST return an error response with status
                         // code 401(Unauthorized) and type "urn:ietf:params:acme:error:unauthorized"
-                        if (account != null && account.Status != AccountStatus.Valid)
-                        {
-                            throw new UnauthorizedException($"Account is not valid. Status is '{account.Status}'");
-                        }
                     }
                     else
                     {
@@ -142,10 +138,9 @@ namespace PeculiarVentures.ACME.Server.Controllers
                         // Once an account is deactivated, the server MUST NOT accept further
                         // requests authorized by that account's key
                         // https://tools.ietf.org/html/rfc8555#section-7.3.6
-                        if (account.Status != AccountStatus.Valid)
-                        {
-                            throw new UnauthorizedException($"Account is not valid. Status is '{account.Status}'");
-                        }
+                    }
+                    if (account != null) {
+                        AssertAccountStatus(account);
                     }
                     #endregion
 
@@ -207,7 +202,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
         }
 
         /// <summary>
-        /// Recieves Id from URI
+        /// Receives Id from URI
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
@@ -237,10 +232,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
 
             var account = AccountService.GetById(GetIdFromLink(header.KeyID));
 
-            if (account.Status == AccountStatus.Deactivated)
-            {
-                throw new UnauthorizedException("Account deactivated");
-            }
+            AssertAccountStatus(account);
 
             return account;
         }
@@ -292,14 +284,13 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 var @params = (UpdateAccount)request.GetContent(ConverterService.GetType<UpdateAccount>());
 
                 var account = GetAccount(request);
-                AssertAccountStatus(account);
 
                 if (@params.Status != null)
                 {
                     // Deactivate
                     if (@params.Status != AccountStatus.Deactivated)
                     {
-                        throw new MalformedException("Request paramter status must be 'deactivated'");
+                        throw new MalformedException("Request parameter status must be 'deactivated'");
                     }
 
                     account = AccountService.Deactivate(account.Id);
@@ -324,9 +315,9 @@ namespace PeculiarVentures.ACME.Server.Controllers
             // If a server receives a POST or POST-as-GET from a
             // deactivated account, it MUST return an error response with status
             // code 401(Unauthorized) and type "urn:ietf:params:acme:error:unauthorized"
-            if (account.Status == AccountStatus.Deactivated)
+            if (account.Status != AccountStatus.Valid)
             {
-                throw new UnauthorizedException("Account deactivated");
+                throw new UnauthorizedException($"Account is not valid. Status is '{account.Status}'");
             }
         }
 
@@ -353,7 +344,7 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 var jwk = innerProtected.Key;
                 if (jwk == null)
                 {
-                    throw new MalformedException("The inner JWS has't a 'jwk' field");
+                    throw new MalformedException("The inner JWS hasn't got a 'jwk' field");
                 }
 
                 // Check that the inner JWS verifies using the key in its "jwk" field.
@@ -368,10 +359,10 @@ namespace PeculiarVentures.ACME.Server.Controllers
                     throw new MalformedException("The payload of the inner JWS is not a well-formed keyChange object");
                 }
 
-                // Check that the "url" parameters of the inner and outer JWSs are the same.
+                // Check that the "url" parameters of the inner and outer JWS are the same.
                 if (reqProtected.Url != innerProtected.Url)
                 {
-                    throw new MalformedException("The 'url' parameters of the inner and outer JWSs are not the same");
+                    throw new MalformedException("The 'url' parameters of the inner and outer JWS are not the same");
                 }
 
                 // Check that the "account" field of the keyChange object contains the URL for the account matching the old key (i.e., the "kid" field in the outer JWS).

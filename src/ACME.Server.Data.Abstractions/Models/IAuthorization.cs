@@ -27,10 +27,5 @@ namespace PeculiarVentures.ACME.Server.Data.Abstractions.Models
         /// domain name.For other authorizations, it MUST be absent
         /// </summary>
         bool? Wildcard { get; set; }
-
-        /// <summary>
-        /// The identifier of account
-        /// </summary>
-        int AccountId { get; set; }
     }
 }
