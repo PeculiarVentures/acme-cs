@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>PeculiarVentures.ACME.Server.Data.Memory</RootNamespace>
     <AssemblyName>PeculiarVentures.ACME.Server.Data.Memory</AssemblyName>
-    <ReleaseVersion>0.2.3</ReleaseVersion>
+    <ReleaseVersion>0.2.4</ReleaseVersion>
   </PropertyGroup>
 
   <ItemGroup>
