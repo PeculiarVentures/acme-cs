@@ -206,6 +206,11 @@ namespace PeculiarVentures.ACME.Server.AspNetCore
 
             if (response.Content is MediaTypeContent content)
             {
+                foreach (var header in response.Headers.AllKeys)
+                {
+                    Response.Headers.Add(header, response.Headers.Get(header));
+                }
+                
                 return new FileStreamResult(content.Content, content.Type);
             }
             else
