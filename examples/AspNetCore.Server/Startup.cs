@@ -46,13 +46,18 @@ namespace AspNetCore.Server
             var rootCert = CertificateEnrollmentService.GenerateCertificate(dn, dn, key, key);
             rootCert = rootCert.CopyWithPrivateKey(key);
 
+            var dn2 = "CN=Test CA";
+            var key2 = RSA.Create(2048);
+            var caCert = CertificateEnrollmentService.GenerateCertificate(dn, dn2, key, key2);
+            caCert = caCert.CopyWithPrivateKey(key2);
+
             services.AddAcmeMemoryRepositories();
             services.AddAcmeServerServices(o =>
             {
                 o.OrdersPageSize = 1;
                 o.BaseAddress = "https://localhost:5003/";
                 o.DownloadCertificateFormat = DownloadCertificateFormat.PemCertificateChain;
-                o.ExtraCertificateStorage = new X509Certificate2Collection(rootCert);
+                o.ExtraCertificateStorage = new X509Certificate2Collection(new X509Certificate2[] { rootCert, caCert });
                 o.ExternalAccountOptions = new ExternalAccountOptions
                 {
                     Type = ExternalAccountType.None,

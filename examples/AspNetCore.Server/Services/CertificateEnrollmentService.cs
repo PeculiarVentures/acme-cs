@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Asn1.X9;
@@ -23,7 +24,7 @@ namespace AspNetCore.Server.Services
 {
     public class CertificateEnrollmentService : BaseService, ICertificateEnrollmentService
     {
-        public CertificateEnrollmentService(IOptions<ServerOptions> options) 
+        public CertificateEnrollmentService(IOptions<ServerOptions> options)
             : base(options)
         {
         }
@@ -49,7 +50,14 @@ namespace AspNetCore.Server.Services
 
             var certGenerator = new X509V3CertificateGenerator();
             certGenerator.SetIssuerDN(new X509Name(issuer));
-            certGenerator.SetSubjectDN(new X509Name(subject));
+            if (!string.IsNullOrEmpty(subject))
+            {
+                certGenerator.SetSubjectDN(new X509Name(subject));
+            }
+            else
+            {
+                certGenerator.SetSubjectDN(X509Name.GetInstance(Asn1Object.FromByteArray(new byte[] { 0x30, 0x00 })));
+            }
             certGenerator.SetSerialNumber(BigInteger.ValueOf(LongRandom(0, 1000000000, new Random())));
             certGenerator.SetNotAfter(DateTime.UtcNow.AddHours(1));
             certGenerator.SetNotBefore(DateTime.UtcNow);
@@ -62,8 +70,8 @@ namespace AspNetCore.Server.Services
         {
             return await Task.Run(() =>
             {
-                var rootCert = Options.ExtraCertificateStorage[0]; 
-                return GenerateCertificate(rootCert.Subject, request.Subject, rootCert.PrivateKey, request.PublicKey.Key);
+                var caCert = Options.ExtraCertificateStorage[1];
+                return GenerateCertificate(caCert.Subject, request.Subject, caCert.PrivateKey, request.PublicKey.Key);
             });
         }
 
