@@ -29,6 +29,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// </summary>
         /// expires (optional, string)
         [JsonProperty("expires")]
+        [JsonConverter(typeof(DateTimeFormatConverter))]
         public DateTime? Expires { get; set; }
 
         /// <summary>
@@ -44,6 +45,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// </summary>
         /// notBefore (optional, string) in the date format defined in [RFC3339]
         [JsonProperty("notBefore")]
+        [JsonConverter(typeof(DateTimeFormatConverter))]
         public DateTime? NotBefore { get; set; }
 
         /// <summary>
@@ -51,6 +53,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// </summary>
         /// notAfter (optional, string) in the date format defined in [RFC3339]
         [JsonProperty("notAfter")]
+        [JsonConverter(typeof(DateTimeFormatConverter))]
         public DateTime? NotAfter { get; set; }
 
         /// <summary>

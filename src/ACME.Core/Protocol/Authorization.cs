@@ -28,6 +28,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// </summary>
         /// expires (optional, string)
         [JsonProperty("expires")]
+        [JsonConverter(typeof(DateTimeFormatConverter))]
         public DateTime? Expires { get; set; }
 
         /// <summary>
