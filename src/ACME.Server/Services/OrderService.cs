@@ -288,6 +288,8 @@ namespace PeculiarVentures.ACME.Server.Services
                 Target = order,
             });
 
+            RefreshStatus(order);
+
             return order;
         }
 
@@ -301,6 +303,7 @@ namespace PeculiarVentures.ACME.Server.Services
         {
             var identifier = ComputerIdentifier(identifiers, IDENTIFIER_HASH);
             var order = OrderRepository.LastByIdentifier(accountId, identifier);
+            RefreshStatus(order);
             return order;
         }
 
@@ -315,7 +318,23 @@ namespace PeculiarVentures.ACME.Server.Services
             #endregion
 
             IOrder order = OnGetActualCheckBefore(@params, accountId);
+            RefreshStatus(order);
 
+            if (order != null
+                && (order.Status == OrderStatus.Pending
+                || order.Status == OrderStatus.Ready
+                || order.Status == OrderStatus.Processing))
+            {
+                return order;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        protected void RefreshStatus(IOrder order)
+        {
             if (!(order == null || order.Status == OrderStatus.Invalid))
             {
                 // Checks expires
@@ -327,7 +346,7 @@ namespace PeculiarVentures.ACME.Server.Services
                 {
                     // RefreshStatus authorizations
                     var authorizations = OrderAuthorizationRepository.GetByOrder(order.Id)
-                        .Select(o => AuthorizationService.GetById(accountId, o.AuthorizationId))
+                        .Select(o => AuthorizationService.GetById(order.AccountId, o.AuthorizationId))
                         .ToArray();
 
                     if (order.Status == OrderStatus.Pending)
@@ -349,18 +368,6 @@ namespace PeculiarVentures.ACME.Server.Services
                 OrderRepository.Update(order);
 
                 Logger.Info("Order {id} status updated to {status}", order.Id, order.Status);
-            }
-
-            if (order != null
-                && (order.Status == OrderStatus.Pending
-                || order.Status == OrderStatus.Ready
-                || order.Status == OrderStatus.Processing))
-            {
-                return order;
-            }
-            else
-            {
-                return null;
             }
         }
 
@@ -389,6 +396,7 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 throw new MalformedException("Order not found");
             }
+            RefreshStatus(order);
 
             // check access
             AccountSecurityService.CheckAccess(new AccountAccess
