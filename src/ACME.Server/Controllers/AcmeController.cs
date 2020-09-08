@@ -139,7 +139,8 @@ namespace PeculiarVentures.ACME.Server.Controllers
                         // requests authorized by that account's key
                         // https://tools.ietf.org/html/rfc8555#section-7.3.6
                     }
-                    if (account != null) {
+                    if (account != null)
+                    {
                         AssertAccountStatus(account);
                     }
                     #endregion
@@ -533,6 +534,9 @@ namespace PeculiarVentures.ACME.Server.Controllers
                 if (request.Token.IsPayloadEmptyObject)
                 {
                     ChallengeService.Validate(challenge);
+
+                    var authzLocation = new Uri(new Uri(Options.BaseAddress), $"authz/{challenge.AuthorizationId}").ToString();
+                    response.Headers.Link.Add(new LinkHeader(authzLocation, new LinkHeaderItem("rel", "up", true)));
                 }
 
                 response.Content = ConverterService.ToChallenge(challenge);
