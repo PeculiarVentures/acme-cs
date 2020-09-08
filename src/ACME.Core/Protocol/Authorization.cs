@@ -21,6 +21,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// </summary>
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonRequired]
+        [JsonProperty("status")]
         public AuthorizationStatus Status { get; set; }
 
         /// <summary>
