@@ -21,12 +21,14 @@ namespace PeculiarVentures.ACME.Protocol
         /// The type of identifier.
         /// </summary>
         /// type (required, string)
+        [JsonProperty("type")]
         public string Type { get; set; }
 
         /// <summary>
         /// The identifier itself.
         /// </summary>
         /// value (required, string)
+        [JsonProperty("value")]
         public string Value { get; set; }
 
         public int Compare(Identifier identifier, bool ignoreCase = false)
