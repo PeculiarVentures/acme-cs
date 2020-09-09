@@ -80,6 +80,14 @@ namespace PeculiarVentures.ACME.Server.Services
 
             var updatedAuthz = RefreshStatus(authz);
 
+            if (authz.Status == AuthorizationStatus.Invalid
+                || authz.Status == AuthorizationStatus.Expired
+                || authz.Status == AuthorizationStatus.Revoked
+                || authz.Status == AuthorizationStatus.Deactivated)
+            {
+                return null;
+            }
+
             return updatedAuthz;
         }
 
