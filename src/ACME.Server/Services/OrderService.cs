@@ -396,7 +396,7 @@ namespace PeculiarVentures.ACME.Server.Services
             {
                 throw new MalformedException("Order not found");
             }
-            RefreshStatus(order);
+
 
             // check access
             AccountSecurityService.CheckAccess(new AccountAccess

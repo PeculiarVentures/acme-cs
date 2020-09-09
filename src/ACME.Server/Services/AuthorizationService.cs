@@ -128,7 +128,7 @@ namespace PeculiarVentures.ACME.Server.Services
                     item.Status = AuthorizationStatus.Valid;
                     AuthorizationRepository.Update(item);
                 }
-                else if (challenges.All(o => o.Status == ChallengeStatus.Invalid))
+                else if (challenges.Any(o => o.Status == ChallengeStatus.Invalid))
                 {
                     item.Status = AuthorizationStatus.Invalid;
                     AuthorizationRepository.Update(item);
