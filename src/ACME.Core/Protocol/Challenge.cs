@@ -37,6 +37,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// </summary>
         /// validated (optional, string)
         [JsonProperty("validated")]
+        [JsonConverter(typeof(DateTimeFormatConverter))]
         public DateTime? Validated { get; set; }
 
         /// <summary>

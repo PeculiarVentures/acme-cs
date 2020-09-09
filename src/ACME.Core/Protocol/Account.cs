@@ -1,6 +1,7 @@
 using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using PeculiarVentures.ACME.Json.Converters;
 using PeculiarVentures.ACME.Web;
 
 namespace PeculiarVentures.ACME.Protocol
@@ -67,6 +68,7 @@ namespace PeculiarVentures.ACME.Protocol
         /// Related for LE.
         /// </summary>
         [JsonProperty("createdAt")]
+        [JsonConverter(typeof(DateTimeFormatConverter))]
         public DateTime? CreatedAt { get; set; }
 
         /// <summary>
