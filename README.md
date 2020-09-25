@@ -1,6 +1,6 @@
 # ACME-CS
 
-![ACME .NET](https://github.com/microshine/acme-cs/workflows/.NET%20Core/badge.svg)
+![ACME .NET](https://github.com/PeculiarVentures/acme-cs/workflows/ACME%20.NET/badge.svg)
 
 ## About
 
